@@ -1,0 +1,77 @@
+datasource db {
+    provider = "mysql"
+    url      = env("DATABASE_URL")
+}
+
+generator client {
+    provider = "prisma-client-js"
+}
+
+model LandPlotModel {
+    id                String                 @id @default(uuid())
+    certificateNumber String                 @unique
+    address           String
+    village           String
+    subDistrict       String
+    regencyCity       String
+    province          String
+    landArea          Float
+    rightType         String
+    adminStatus       String
+    createdAt         DateTime               @default(now())
+    owners            OwnerModel[]
+    documents         DocumentModel[]
+    histories         OwnershipHistoryModel[]
+    
+    @@map("land_plots")
+}
+
+model OwnerModel {
+    id             String                 @id @default(uuid())
+    landPlotId     String
+    name           String
+    nationalId     String
+    address        String
+    phoneNumber    String
+    isCurrentOwner Boolean                @default(false)
+    createdAt      DateTime               @default(now())
+    landPlot       LandPlotModel          @relation(fields: [landPlotId], references: [id], onDelete: Cascade)
+    documents      DocumentModel[]
+    previousHistories OwnershipHistoryModel[] @relation("PreviousOwner")
+    newHistories      OwnershipHistoryModel[] @relation("NewOwner")
+    
+    @@map("owners")
+}
+
+model DocumentModel {
+    id             String                 @id @default(uuid())
+    landPlotId     String
+    ownerId        String?
+    documentType   String
+    documentNumber String
+    documentDate   DateTime
+    createdAt      DateTime               @default(now())
+    landPlot       LandPlotModel          @relation(fields: [landPlotId], references: [id], onDelete: Cascade)
+    owner          OwnerModel?            @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+    histories      OwnershipHistoryModel[]
+    
+    @@unique([landPlotId, documentNumber])
+    @@map("documents")
+}
+
+model OwnershipHistoryModel {
+    id                   String        @id @default(uuid())
+    landPlotId           String
+    previousOwnerId      String?
+    newOwnerId           String?
+    transferDate         DateTime
+    transferType         String
+    supportingDocumentId String?
+    createdAt            DateTime      @default(now())
+    landPlot             LandPlotModel @relation(fields: [landPlotId], references: [id], onDelete: Cascade)
+    previousOwner        OwnerModel?   @relation("PreviousOwner", fields: [previousOwnerId], references: [id], onDelete: SetNull)
+    newOwner             OwnerModel?   @relation("NewOwner", fields: [newOwnerId], references: [id], onDelete: SetNull)
+    supportingDocument   DocumentModel? @relation(fields: [supportingDocumentId], references: [id], onDelete: SetNull)
+    
+    @@map("ownership_histories")
+}
