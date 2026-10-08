@@ -1,0 +1,15 @@
+{
+  "name": "proyek-rpl",
+  "private": true,
+  "workspaces": [
+    "apps/web",
+    "apps/api",
+    "packages/shared"
+  ],
+  "scripts": {
+    "dev:api": "npm run dev --prefix apps/api",
+    "dev:web": "npm run dev --prefix apps/web",
+    "build:web": "npm run build --prefix apps/web",
+    "build:shared": "npm run build --prefix packages/shared"
+  }
+}
