@@ -90,3 +90,4 @@ test("Fitur 2 - Metrik Dashboard: Menghitung akumulasi statistik ringkasan dan r
   assert.strictEqual(metrics.incomplete, 1);
   assert.strictEqual(metrics.completenessRate, 50); // 2 dari 4 = 50%
 });
+

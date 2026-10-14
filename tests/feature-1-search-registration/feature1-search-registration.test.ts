@@ -141,3 +141,4 @@ test("Fitur 1 - Validasi: Menolak pendaftaran jika luas tanah <= 0 atau tidak va
   assert.strictEqual(validation.isValid, false);
   assert.ok(validation.errors.some((err) => err.includes("angka positif")));
 });
+
