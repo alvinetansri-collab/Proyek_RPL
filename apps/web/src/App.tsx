@@ -6,6 +6,8 @@ import {
   calculateDashboardMetrics,
   searchLandPlots,
   validateLandRegistration,
+  validateDocumentAttachment,
+  attachDocumentToLand,
 } from "@proyek-rpl/shared";
 
 interface LandItem {
@@ -184,7 +186,6 @@ export default function App() {
   const [displayedLands, setDisplayedLands] = useState<LandItem[]>(initialMockLands);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRightType, setSelectedRightType] = useState("ALL");
-  const [loading, setLoading] = useState(false);
   const [isBackendConnected, setIsBackendConnected] = useState(false);
 
   // Modal State
@@ -193,7 +194,14 @@ export default function App() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
-  // Form Fields
+  // State Form Tambah Dokumen Baru (US-5)
+  const [isDocFormOpen, setIsDocFormOpen] = useState(false);
+  const [docType, setDocType] = useState("Sertifikat Hak Milik");
+  const [docNumber, setDocNumber] = useState("");
+  const [docDate, setDocDate] = useState(new Date().toISOString().split("T")[0]);
+  const [docErrors, setDocErrors] = useState<string[]>([]);
+
+  // Form Fields Tambah Tanah (US-1)
   const [formCertNumber, setFormCertNumber] = useState("");
   const [formOwnerName, setFormOwnerName] = useState("");
   const [formAddress, setFormAddress] = useState("");
@@ -202,10 +210,10 @@ export default function App() {
   const [formRegency, setFormRegency] = useState("Kota Bogor");
   const [formProvince, setFormProvince] = useState("Jawa Barat");
   const [formLandArea, setFormLandArea] = useState<number>(150);
-  const [formRightType, setFormRightType] = useState("Hak Milik");
-  const [formAdminStatus, setFormAdminStatus] = useState("Terdaftar");
+  const [formRightType, setFormRightType] = useState("Hak Milik (SHM)");
+  const [formAdminStatus, setFormAdminStatus] = useState("Terdaftar Aktif");
 
-  // Filter & Search handler menggunakan modul Fitur 1
+  // US-2: Filter & Search handler
   const applyFilter = (query: string, rightType: string, dataset = allLands) => {
     const results = searchLandPlots(dataset, {
       query,
@@ -230,7 +238,7 @@ export default function App() {
     setDisplayedLands(allLands);
   };
 
-  // Submit Pendaftaran Tanah Baru dengan Validasi Fitur 1
+  // US-1: Submit Pendaftaran Tanah Baru dengan Validasi
   const handleCreateLand = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -269,7 +277,7 @@ export default function App() {
       LandArea: Number(formLandArea),
       RightType: formRightType,
       AdminStatus: formAdminStatus,
-      CompletenessStatus: DocumentStatus.INCOMPLETE, // Tanah baru belum memiliki dokumen
+      CompletenessStatus: DocumentStatus.INCOMPLETE,
       CurrentOwnerName: formOwnerName.trim(),
       CreatedAt: new Date().toISOString(),
       owners: [
@@ -305,6 +313,44 @@ export default function App() {
     setFormSubDistrict("");
   };
 
+  // US-5: Melampirkan Dokumen Baru ke Bidang Tanah yang Dipilih
+  const handleAddDocument = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedLand) return;
+
+    const validation = validateDocumentAttachment(
+      {
+        documentType: docType,
+        documentNumber: docNumber,
+        documentDate: docDate,
+      },
+      selectedLand.documents || []
+    );
+
+    if (!validation.isValid) {
+      setDocErrors(validation.errors);
+      return;
+    }
+
+    setDocErrors([]);
+
+    const { updatedLand } = attachDocumentToLand(selectedLand, {
+      documentType: docType,
+      documentNumber: docNumber,
+      documentDate: docDate,
+    });
+
+    // Perbarui state lokal dan modal
+    setSelectedLand(updatedLand);
+    const updatedAllLands = allLands.map((item) => (item.Id === updatedLand.Id ? updatedLand : item));
+    setAllLands(updatedAllLands);
+    applyFilter(searchQuery, selectedRightType, updatedAllLands);
+
+    // Reset form dokumen
+    setDocNumber("");
+    setIsDocFormOpen(false);
+  };
+
   // Cek backend API secara asynchronous
   useEffect(() => {
     fetch("http://localhost:5000/api/lands")
@@ -324,10 +370,10 @@ export default function App() {
       });
   }, []);
 
-  // Metrik Statistik Dashboard menggunakan Fitur 2
+  // Metrik Statistik Dashboard (US-5 & US-3)
   const metrics = calculateDashboardMetrics(allLands);
 
-  // Linimasa riwayat tanah terpilih yang diurutkan menggunakan Fitur 2
+  // Linimasa riwayat tanah terpilih yang diurutkan (US-4)
   const sortedHistories = selectedLand?.histories
     ? sortOwnershipTimeline(selectedLand.histories, timelineDirection)
     : [];
@@ -360,7 +406,7 @@ export default function App() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-6 space-y-6">
-        {/* Fitur 2: Dashboard Ringkasan & Metrik Evaluasi */}
+        {/* US-3 & US-5: Dashboard Ringkasan & Metrik Evaluasi */}
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
             <div>
@@ -407,7 +453,7 @@ export default function App() {
           </div>
         </section>
 
-        {/* Fitur 1: Pencarian Cerdas & Filter Data */}
+        {/* US-2: Pencarian Cerdas & Filter Data */}
         <section className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4">
           <form onSubmit={handleSearchSubmit} className="flex-1 flex flex-col sm:flex-row gap-2">
             <div className="relative flex-1">
@@ -463,7 +509,7 @@ export default function App() {
             <div>
               <h2 className="font-bold text-slate-800 text-base">Daftar Arsip & Monitoring Bidang Tanah</h2>
               <p className="text-xs text-slate-500">
-                Pilih baris atau klik tombol "Lihat Detail" untuk memeriksa dokumen dan linimasa silsilah kepemilikan.
+                Pilih baris atau klik tombol "Lihat Detail" untuk memeriksa dokumen, melampirkan berkas baru, dan linimasa silsilah.
               </p>
             </div>
             <span className="text-xs font-semibold px-2.5 py-1 bg-slate-100 text-slate-700 rounded-md border">
@@ -526,7 +572,11 @@ export default function App() {
                         </td>
                         <td className="py-3 px-4 text-center">
                           <button
-                            onClick={() => setSelectedLand(item)}
+                            onClick={() => {
+                              setSelectedLand(item);
+                              setIsDocFormOpen(false);
+                              setDocErrors([]);
+                            }}
                             className="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-semibold px-3 py-1.5 rounded-md text-xs border border-emerald-300 transition"
                           >
                             Lihat Detail
@@ -542,7 +592,7 @@ export default function App() {
         </section>
       </main>
 
-      {/* Modal Detail Bidang Tanah & Linimasa Riwayat (Fitur 2) */}
+      {/* Modal Detail Bidang Tanah, Dokumen (US-5) & Linimasa Riwayat (US-4) */}
       {selectedLand && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto flex flex-col">
@@ -563,7 +613,7 @@ export default function App() {
             </div>
 
             <div className="p-6 space-y-6 flex-1">
-              {/* Status Kelengkapan & Administrasi */}
+              {/* US-3: Status Kelengkapan & Administrasi */}
               <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                 <div>
                   <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
@@ -578,8 +628,8 @@ export default function App() {
                         </span>
                       );
                     })()}
-                    <span className="text-xs text-slate-500">
-                      ({selectedLand.documents?.length || 0} berkas terdata)
+                    <span className="text-xs text-slate-500 font-medium">
+                      ({selectedLand.documents?.length || 0} berkas terlampir)
                     </span>
                   </div>
                 </div>
@@ -651,11 +701,81 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Arsip Dokumen Terlampir */}
+              {/* US-5: Arsip Dokumen Terlampir & Form Lampirkan Dokumen Baru */}
               <div>
-                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider border-b pb-1.5 mb-3">
-                  📂 Dokumen Pendukung Fisik / Digital
-                </h4>
+                <div className="flex justify-between items-center border-b pb-1.5 mb-3">
+                  <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                    📂 Dokumen Pendukung Fisik / Digital
+                  </h4>
+                  <button
+                    onClick={() => {
+                      setIsDocFormOpen(!isDocFormOpen);
+                      setDocErrors([]);
+                    }}
+                    className="text-xs bg-emerald-700 hover:bg-emerald-800 text-white px-2.5 py-1 rounded font-semibold transition"
+                  >
+                    {isDocFormOpen ? "✕ Batal" : "➕ Lampirkan Dokumen Baru"}
+                  </button>
+                </div>
+
+                {/* Formulir Input Dokumen Baru (US-5) */}
+                {isDocFormOpen && (
+                  <form onSubmit={handleAddDocument} className="p-4 bg-emerald-50/50 rounded-xl border border-emerald-200 text-xs space-y-3 mb-3">
+                    <p className="font-bold text-emerald-900">Lampirkan Berkas Kepemilikan Baru</p>
+                    {docErrors.length > 0 && (
+                      <div className="p-2 bg-red-50 border border-red-300 text-red-700 rounded text-[11px]">
+                        {docErrors.map((err, i) => (
+                          <div key={i}>{err}</div>
+                        ))}
+                      </div>
+                    )}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      <div>
+                        <label className="block text-slate-600 font-medium mb-1">Jenis Dokumen *</label>
+                        <select
+                          value={docType}
+                          onChange={(e) => setDocType(e.target.value)}
+                          className="w-full p-2 border rounded bg-white text-xs"
+                        >
+                          <option value="Sertifikat Hak Milik">Sertifikat Hak Milik (SHM)</option>
+                          <option value="Sertifikat HGB">Sertifikat HGB</option>
+                          <option value="Akta Jual Beli (AJB)">Akta Jual Beli (AJB)</option>
+                          <option value="Surat Keterangan Waris">Surat Keterangan Waris</option>
+                          <option value="Surat Hibah">Surat Hibah</option>
+                          <option value="SPPT PBB Terverifikasi">SPPT PBB Terverifikasi</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-slate-600 font-medium mb-1">Nomor Dokumen *</label>
+                        <input
+                          type="text"
+                          placeholder="Contoh: AJB-45/PPAT/2024"
+                          value={docNumber}
+                          onChange={(e) => setDocNumber(e.target.value)}
+                          className="w-full p-2 border rounded text-xs bg-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-600 font-medium mb-1">Tanggal Terbit *</label>
+                        <input
+                          type="date"
+                          value={docDate}
+                          onChange={(e) => setDocDate(e.target.value)}
+                          className="w-full p-2 border rounded text-xs bg-white"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-2 pt-1">
+                      <button
+                        type="submit"
+                        className="bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-1.5 rounded font-semibold text-xs"
+                      >
+                        Simpan Berkas Dokumen
+                      </button>
+                    </div>
+                  </form>
+                )}
+
                 {!selectedLand.documents || selectedLand.documents.length === 0 ? (
                   <div className="p-3 bg-red-50 text-red-700 rounded-lg border border-red-200 text-xs">
                     ⚠️ Belum ada dokumen kepemilikan yang dilampirkan untuk bidang tanah ini.
@@ -678,7 +798,7 @@ export default function App() {
                 )}
               </div>
 
-              {/* Fitur 2: Linimasa Silsilah Riwayat Kepemilikan */}
+              {/* US-4: Linimasa Silsilah Riwayat Kepemilikan */}
               <div>
                 <div className="flex justify-between items-center border-b pb-1.5 mb-3">
                   <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
@@ -746,7 +866,7 @@ export default function App() {
         </div>
       )}
 
-      {/* Modal Tambah Tanah Baru (Fitur 1) */}
+      {/* US-1: Modal Tambah Tanah Baru */}
       {isAddModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
