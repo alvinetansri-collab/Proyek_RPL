@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert";
-import { searchLandPlots, validateLandRegistration } from "../packages/shared/src/utils/landSearch.ts";
-import type { LandPlot } from "../packages/shared/src/models/LandPlot.ts";
+import { searchLandPlots, validateLandRegistration } from "../../packages/shared/src/features/feature-1-search-registration/landSearch.ts";
+import type { LandPlot } from "../../packages/shared/src/models/LandPlot.ts";
 
 const sampleLands: Array<LandPlot & { CurrentOwnerName: string }> = [
   {

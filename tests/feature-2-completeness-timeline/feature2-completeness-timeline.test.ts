@@ -1,12 +1,12 @@
 import test from "node:test";
 import assert from "node:assert";
-import { DocumentStatus } from "../packages/shared/src/enums/DocumentStatus.ts";
+import { DocumentStatus } from "../../packages/shared/src/enums/DocumentStatus.ts";
 import {
   evaluateDocumentCompleteness,
   getStatusBadgeDetails,
   sortOwnershipTimeline,
   calculateDashboardMetrics,
-} from "../packages/shared/src/utils/completenessEvaluator.ts";
+} from "../../packages/shared/src/features/feature-2-completeness-timeline/completenessEvaluator.ts";
 
 test("Fitur 2 - Evaluasi: Menghasilkan status COMPLETE jika terdapat minimal 3 dokumen", () => {
   const docs = [
@@ -90,4 +90,3 @@ test("Fitur 2 - Metrik Dashboard: Menghitung akumulasi statistik ringkasan dan r
   assert.strictEqual(metrics.incomplete, 1);
   assert.strictEqual(metrics.completenessRate, 50); // 2 dari 4 = 50%
 });
-
