@@ -1,0 +1,19 @@
+{
+  "name": "proyek-rpl",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/web",
+    "apps/api",
+    "packages/shared"
+  ],
+  "scripts": {
+    "dev:api": "npm run dev --prefix apps/api",
+    "dev:web": "npm run dev --prefix apps/web",
+    "build:shared": "npm run build --prefix packages/shared",
+    "build:api": "npm run build --prefix apps/api",
+    "build:web": "npm run build --prefix apps/web",
+    "build": "npm run build:shared && npm run build:api && npm run build:web",
+    "test": "node --test tests/*.test.ts"
+  }
+}
