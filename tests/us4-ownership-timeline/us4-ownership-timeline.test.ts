@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert";
-import { sortOwnershipTimeline } from "../packages/shared/src/features/feature-2-completeness-timeline/completenessEvaluator.ts";
+import { sortOwnershipTimeline } from "../../packages/shared/src/features/feature-2-completeness-timeline/completenessEvaluator.ts";
 
 test("US-4: Mengurutkan linimasa silsilah mutasi tanah secara kronologis (ascending: terlama ke terbaru)", () => {
   const histories = [
@@ -56,3 +56,4 @@ test("US-4: Data riwayat kepemilikan memelihara rantai transfer dari pemilik seb
   assert.strictEqual(history.previousOwnerName, "Raden Mas Soeroso");
   assert.strictEqual(history.newOwnerName, "Ir. Bambang Trihatmojo");
 });
+

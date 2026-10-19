@@ -1,10 +1,10 @@
 import test from "node:test";
 import assert from "node:assert";
-import { DocumentStatus } from "../packages/shared/src/enums/DocumentStatus.ts";
+import { DocumentStatus } from "../../packages/shared/src/enums/DocumentStatus.ts";
 import {
   evaluateDocumentCompleteness,
   getStatusBadgeDetails,
-} from "../packages/shared/src/features/feature-2-completeness-timeline/completenessEvaluator.ts";
+} from "../../packages/shared/src/features/feature-2-completeness-timeline/completenessEvaluator.ts";
 
 test("US-3: Bidang tanah dengan 3 dokumen atau lebih dievaluasi sebagai COMPLETE", () => {
   const threeDocs = [
@@ -65,3 +65,4 @@ test("US-3: Setiap status kelengkapan memiliki deskripsi penjelasan yang informa
   assert.ok(reviewBadge.description.length > 10);
   assert.ok(incompleteBadge.description.length > 10);
 });
+

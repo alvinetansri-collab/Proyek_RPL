@@ -1,11 +1,11 @@
 import test from "node:test";
 import assert from "node:assert";
-import { DocumentStatus } from "../packages/shared/src/enums/DocumentStatus.ts";
-import { calculateDashboardMetrics } from "../packages/shared/src/features/feature-2-completeness-timeline/completenessEvaluator.ts";
+import { DocumentStatus } from "../../packages/shared/src/enums/DocumentStatus.ts";
+import { calculateDashboardMetrics } from "../../packages/shared/src/features/feature-2-completeness-timeline/completenessEvaluator.ts";
 import {
   validateDocumentAttachment,
   attachDocumentToLand,
-} from "../packages/shared/src/features/feature-3-document-management/documentManager.ts";
+} from "../../packages/shared/src/features/feature-3-document-management/documentManager.ts";
 
 test("US-5: Validasi penambahan berkas dokumen baru berhasil saat data lengkap", () => {
   const input = {
@@ -125,6 +125,6 @@ test("US-5: Kalkulasi persentase kelengkapan dashboard (completeness rate) tepat
     { CompletenessStatus: DocumentStatus.INCOMPLETE },
   ];
   const metrics = calculateDashboardMetrics(lands);
-  // 1 dari 4 = 25%
   assert.strictEqual(metrics.completenessRate, 25);
 });
+

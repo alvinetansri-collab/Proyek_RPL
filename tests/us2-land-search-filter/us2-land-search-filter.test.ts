@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert";
-import { searchLandPlots } from "../packages/shared/src/features/feature-1-search-registration/landSearch.ts";
-import type { LandPlot } from "../packages/shared/src/models/LandPlot.ts";
+import { searchLandPlots } from "../../packages/shared/src/features/feature-1-search-registration/landSearch.ts";
+import type { LandPlot } from "../../packages/shared/src/models/LandPlot.ts";
 
 const mockLands: Array<LandPlot & { CurrentOwnerName: string }> = [
   {
@@ -99,3 +99,4 @@ test("US-2: Kueri yang tidak cocok menghasilkan array kosong tanpa runtime error
   const result = searchLandPlots(mockLands, "Surabaya");
   assert.strictEqual(result.length, 0);
 });
+

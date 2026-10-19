@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert";
-import { validateLandRegistration } from "../packages/shared/src/features/feature-1-search-registration/landSearch.ts";
+import { validateLandRegistration } from "../../packages/shared/src/features/feature-1-search-registration/landSearch.ts";
 
 test("US-1: Pendaftaran bidang tanah baru berhasil jika seluruh field wajib valid", () => {
   const input = {
@@ -132,3 +132,4 @@ test("US-1: Mencegah duplikasi nomor sertifikat yang sudah terdaftar dalam siste
   assert.strictEqual(result.isValid, false);
   assert.ok(result.errors.some((e) => e.includes("sudah terdaftar dalam sistem")));
 });
+
