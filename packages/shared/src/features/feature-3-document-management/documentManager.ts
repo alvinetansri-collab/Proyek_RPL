@@ -91,3 +91,31 @@ export function attachDocumentToLand<
     newStatus,
   };
 }
+
+/**
+ * US-5: Menghapus / Mencabut Berkas Dokumen dari Bidang Tanah dan Memperbarui Status Otomatis
+ */
+export function detachDocumentFromLand<
+  T extends {
+    documents?: Array<{ id: string; documentType: string; documentNumber: string; documentDate: string }>;
+    CompletenessStatus?: DocumentStatus;
+  }
+>(
+  land: T,
+  documentId: string
+): { updatedLand: T; newStatus: DocumentStatus } {
+  const currentDocs = land.documents || [];
+  const updatedDocs = currentDocs.filter((doc) => doc.id !== documentId);
+  const newStatus = evaluateDocumentCompleteness(updatedDocs);
+
+  const updatedLand: T = {
+    ...land,
+    documents: updatedDocs,
+    CompletenessStatus: newStatus,
+  };
+
+  return {
+    updatedLand,
+    newStatus,
+  };
+}

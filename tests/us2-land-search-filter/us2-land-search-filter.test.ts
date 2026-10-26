@@ -3,7 +3,7 @@ import assert from "node:assert";
 import { searchLandPlots } from "../../packages/shared/src/features/feature-1-search-registration/landSearch.ts";
 import type { LandPlot } from "../../packages/shared/src/models/LandPlot.ts";
 
-const mockLands: Array<LandPlot & { CurrentOwnerName: string }> = [
+const mockLands: Array<LandPlot & { CurrentOwnerName: string; CompletenessStatus?: string }> = [
   {
     Id: "1",
     CertificateNumber: "SHM-12.04.2023.001",
@@ -15,6 +15,7 @@ const mockLands: Array<LandPlot & { CurrentOwnerName: string }> = [
     LandArea: 450,
     RightType: "Hak Milik (SHM)",
     AdminStatus: "Terdaftar Aktif",
+    CompletenessStatus: "COMPLETE",
     CurrentOwnerName: "Budi Santoso",
     CreatedAt: "2023-01-01T00:00:00.000Z",
   },
@@ -29,6 +30,7 @@ const mockLands: Array<LandPlot & { CurrentOwnerName: string }> = [
     LandArea: 1200,
     RightType: "Hak Guna Bangunan (HGB)",
     AdminStatus: "Proses Perpanjangan",
+    CompletenessStatus: "NEEDS_REVIEW",
     CurrentOwnerName: "PT Sentul Jaya Abadi",
     CreatedAt: "2021-09-04T00:00:00.000Z",
   },
@@ -43,6 +45,7 @@ const mockLands: Array<LandPlot & { CurrentOwnerName: string }> = [
     LandArea: 320,
     RightType: "Girik / Adat",
     AdminStatus: "Belum Bersertifikat",
+    CompletenessStatus: "INCOMPLETE",
     CurrentOwnerName: "Siti Rahmawati",
     CreatedAt: "2018-09-01T00:00:00.000Z",
   },
@@ -95,8 +98,13 @@ test("US-2: Filter jenis hak tanah Girik / Adat", () => {
   assert.strictEqual(result[0].RightType, "Girik / Adat");
 });
 
+test("US-2: Filter berdasarkan status kelengkapan dokumen COMPLETE", () => {
+  const result = searchLandPlots(mockLands, { completenessStatus: "COMPLETE" });
+  assert.strictEqual(result.length, 1);
+  assert.strictEqual(result[0].Id, "1");
+});
+
 test("US-2: Kueri yang tidak cocok menghasilkan array kosong tanpa runtime error", () => {
   const result = searchLandPlots(mockLands, "Surabaya");
   assert.strictEqual(result.length, 0);
 });
-

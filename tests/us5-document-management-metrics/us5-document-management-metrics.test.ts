@@ -5,6 +5,7 @@ import { calculateDashboardMetrics } from "../../packages/shared/src/features/fe
 import {
   validateDocumentAttachment,
   attachDocumentToLand,
+  detachDocumentFromLand,
 } from "../../packages/shared/src/features/feature-3-document-management/documentManager.ts";
 
 test("US-5: Validasi penambahan berkas dokumen baru berhasil saat data lengkap", () => {
@@ -102,6 +103,23 @@ test("US-5: Melampirkan dokumen ke-3 otomatis meningkatkan status dari NEEDS_REV
   assert.strictEqual(updatedLand.CompletenessStatus, DocumentStatus.COMPLETE);
 });
 
+test("US-5: Mencabut dokumen dapat menurunkan status kelengkapan secara otomatis (COMPLETE menjadi NEEDS_REVIEW)", () => {
+  const landWith3Docs = {
+    Id: "land-103",
+    documents: [
+      { id: "d1", documentType: "SHM", documentNumber: "SHM-1", documentDate: "2020-01-01" },
+      { id: "d2", documentType: "AJB", documentNumber: "AJB-1", documentDate: "2020-02-01" },
+      { id: "d3", documentType: "SPPT PBB", documentNumber: "PBB-2023", documentDate: "2023-01-01" },
+    ],
+    CompletenessStatus: DocumentStatus.COMPLETE,
+  };
+
+  const { updatedLand, newStatus } = detachDocumentFromLand(landWith3Docs, "d3");
+  assert.strictEqual(updatedLand.documents.length, 2);
+  assert.strictEqual(newStatus, DocumentStatus.NEEDS_REVIEW);
+  assert.strictEqual(updatedLand.CompletenessStatus, DocumentStatus.NEEDS_REVIEW);
+});
+
 test("US-5: Kalkulasi metrik agregat dashboard menghitung jumlah total tanah dan per kategori status secara presisi", () => {
   const mockLands = [
     { CompletenessStatus: DocumentStatus.COMPLETE },
@@ -127,4 +145,3 @@ test("US-5: Kalkulasi persentase kelengkapan dashboard (completeness rate) tepat
   const metrics = calculateDashboardMetrics(lands);
   assert.strictEqual(metrics.completenessRate, 25);
 });
-

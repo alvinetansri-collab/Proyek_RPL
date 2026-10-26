@@ -4,6 +4,7 @@ export interface LandSearchFilter {
   query?: string;
   rightType?: string;
   adminStatus?: string;
+  completenessStatus?: string;
 }
 
 /**
@@ -17,6 +18,7 @@ export function searchLandPlots(
   const query = typeof filter === "string" ? filter.trim().toLowerCase() : (filter.query || "").trim().toLowerCase();
   const rightType = typeof filter === "object" ? filter.rightType : undefined;
   const adminStatus = typeof filter === "object" ? filter.adminStatus : undefined;
+  const completenessStatus = typeof filter === "object" ? filter.completenessStatus : undefined;
 
   return lands.filter((land) => {
     // Filter jenis hak jika ditentukan
@@ -26,6 +28,15 @@ export function searchLandPlots(
 
     // Filter status administrasi jika ditentukan
     if (adminStatus && adminStatus !== "ALL" && land.AdminStatus !== adminStatus) {
+      return false;
+    }
+
+    // Filter status kelengkapan jika ditentukan
+    if (
+      completenessStatus &&
+      completenessStatus !== "ALL" &&
+      (land as any).CompletenessStatus !== completenessStatus
+    ) {
       return false;
     }
 

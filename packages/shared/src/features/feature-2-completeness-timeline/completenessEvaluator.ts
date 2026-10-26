@@ -121,3 +121,119 @@ export function calculateDashboardMetrics(
   };
 }
 
+export interface OwnershipTransferInput {
+  transferType: string;
+  transferDate: string;
+  newOwnerName: string;
+  newOwnerNik?: string;
+  newOwnerPhone?: string;
+  newOwnerAddress?: string;
+  note?: string;
+}
+
+export interface OwnershipTransferValidationResult {
+  isValid: boolean;
+  errors: string[];
+}
+
+/**
+ * US-4: Validasi Pencatatan Peralihan Hak / Mutasi Kepemilikan Tanah
+ */
+export function validateOwnershipTransfer(
+  input: Partial<OwnershipTransferInput>,
+  currentOwnerName?: string
+): OwnershipTransferValidationResult {
+  const errors: string[] = [];
+
+  if (!input.transferType || input.transferType.trim() === "") {
+    errors.push("Jenis mutasi / peralihan hak wajib dipilih.");
+  }
+
+  if (!input.newOwnerName || input.newOwnerName.trim() === "") {
+    errors.push("Nama pemilik baru wajib diisi.");
+  } else if (
+    currentOwnerName &&
+    input.newOwnerName.trim().toLowerCase() === currentOwnerName.trim().toLowerCase()
+  ) {
+    errors.push("Nama pemilik baru tidak boleh sama dengan pemilik terdaftar saat ini.");
+  }
+
+  if (!input.transferDate || input.transferDate.trim() === "") {
+    errors.push("Tanggal mutasi wajib diisi.");
+  } else {
+    const parsed = new Date(input.transferDate);
+    if (isNaN(parsed.getTime())) {
+      errors.push("Format tanggal mutasi tidak valid.");
+    }
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+  };
+}
+
+/**
+ * US-4: Melakukan Mutasi Kepemilikan Tanah dan Menambahkan Entri Linimasa Riwayat
+ */
+export function recordOwnershipTransfer<
+  T extends {
+    CurrentOwnerName?: string;
+    owners?: Array<{ name: string; nationalId?: string; phoneNumber?: string; address?: string }>;
+    histories?: Array<{
+      id: string;
+      transferDate: string;
+      transferType: string;
+      previousOwnerName?: string;
+      newOwnerName?: string;
+    }>;
+  }
+>(
+  land: T,
+  input: OwnershipTransferInput
+): {
+  updatedLand: T;
+  newHistoryEntry: {
+    id: string;
+    transferDate: string;
+    transferType: string;
+    previousOwnerName: string;
+    newOwnerName: string;
+  };
+} {
+  const previousOwner = land.CurrentOwnerName || "Pendaftaran Awal";
+  const newHistoryEntry = {
+    id: `hist-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+    transferDate: input.transferDate.trim(),
+    transferType: input.transferType.trim(),
+    previousOwnerName: previousOwner,
+    newOwnerName: input.newOwnerName.trim(),
+  };
+
+  const currentHistories = land.histories || [];
+  const updatedHistories = [...currentHistories, newHistoryEntry];
+
+  const newOwnerObj = {
+    name: input.newOwnerName.trim(),
+    nationalId:
+      input.newOwnerNik?.trim() ||
+      "3201" + Math.floor(100000000000 + Math.random() * 900000000000),
+    phoneNumber:
+      input.newOwnerPhone?.trim() ||
+      "0812" + Math.floor(10000000 + Math.random() * 90000000),
+    address: input.newOwnerAddress?.trim() || "Sesuai domisili baru",
+  };
+
+  const updatedLand: T = {
+    ...land,
+    CurrentOwnerName: input.newOwnerName.trim(),
+    owners: [newOwnerObj, ...(land.owners || [])],
+    histories: updatedHistories,
+  };
+
+  return {
+    updatedLand,
+    newHistoryEntry,
+  };
+}
+

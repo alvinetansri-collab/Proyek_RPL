@@ -1,6 +1,10 @@
 import test from "node:test";
 import assert from "node:assert";
-import { sortOwnershipTimeline } from "../../packages/shared/src/features/feature-2-completeness-timeline/completenessEvaluator.ts";
+import {
+  sortOwnershipTimeline,
+  validateOwnershipTransfer,
+  recordOwnershipTransfer,
+} from "../../packages/shared/src/features/feature-2-completeness-timeline/completenessEvaluator.ts";
 
 test("US-4: Mengurutkan linimasa silsilah mutasi tanah secara kronologis (ascending: terlama ke terbaru)", () => {
   const histories = [
@@ -57,3 +61,43 @@ test("US-4: Data riwayat kepemilikan memelihara rantai transfer dari pemilik seb
   assert.strictEqual(history.newOwnerName, "Ir. Bambang Trihatmojo");
 });
 
+test("US-4: Validasi mutasi kepemilikan menolak jika nama pemilik baru kosong", () => {
+  const res = validateOwnershipTransfer({
+    transferType: "Akta Jual Beli (AJB)",
+    transferDate: "2024-05-12",
+    newOwnerName: "",
+  }, "Budi Santoso");
+  assert.strictEqual(res.isValid, false);
+  assert.ok(res.errors.some((e) => e.includes("Nama pemilik baru")));
+});
+
+test("US-4: Validasi mutasi menolak jika nama pemilik baru identik dengan pemilik saat ini", () => {
+  const res = validateOwnershipTransfer({
+    transferType: "Akta Jual Beli (AJB)",
+    transferDate: "2024-05-12",
+    newOwnerName: "Budi Santoso",
+  }, "Budi Santoso");
+  assert.strictEqual(res.isValid, false);
+  assert.ok(res.errors.some((e) => e.includes("tidak boleh sama")));
+});
+
+test("US-4: Eksekusi recordOwnershipTransfer memperbarui CurrentOwnerName dan menambahkan catatan mutasi ke riwayat", () => {
+  const land = {
+    CurrentOwnerName: "Budi Santoso",
+    histories: [
+      { id: "h1", transferDate: "2020-01-01", transferType: "Pendaftaran Baru", previousOwnerName: "-", newOwnerName: "Budi Santoso" }
+    ],
+    owners: [{ name: "Budi Santoso" }]
+  };
+
+  const { updatedLand, newHistoryEntry } = recordOwnershipTransfer(land, {
+    transferType: "Akta Jual Beli (AJB)",
+    transferDate: "2024-06-01",
+    newOwnerName: "Citra Dewi",
+  });
+
+  assert.strictEqual(updatedLand.CurrentOwnerName, "Citra Dewi");
+  assert.strictEqual(updatedLand.histories.length, 2);
+  assert.strictEqual(newHistoryEntry.previousOwnerName, "Budi Santoso");
+  assert.strictEqual(newHistoryEntry.newOwnerName, "Citra Dewi");
+});
