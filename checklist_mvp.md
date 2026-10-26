@@ -126,3 +126,4 @@ TOTAL UJI: 63 | LULUS: 63 | GAGAL: 0 | STATUS: ALL PASSED
 4. **Resiliensi Kegagalan Server / Offline Mode**:
    - Jika server backend API (`localhost:5000`) tidak aktif, aplikasi secara otomatis beralih ke **Mode Standalone (Penyimpanan Lokal Aktif)** menggunakan `localStorage`. Data pengguna tidak akan hilang saat halaman di-refresh.
    - Indikator koneksi di header memberikan informasi transparan apakah sistem sedang terhubung ke API atau menggunakan penyimpanan lokal.
+

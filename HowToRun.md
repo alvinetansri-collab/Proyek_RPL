@@ -225,3 +225,4 @@ Ikuti langkah-langkah di bawah ini untuk menunjukkan seluruh fungsionalitas MVP 
 | `POST` | `/api/lands/:id/histories` | Mencatat mutasi kepemilikan dan memperbarui pemilik aktif |
 | `DELETE` | `/api/lands/:id` | Menghapus bidang tanah dari sistem |
 | `POST` | `/api/reset-demo` | Mengembalikan data ke konfigurasi awal bawaan demo |
+

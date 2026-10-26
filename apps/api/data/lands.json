@@ -1,0 +1,134 @@
+[
+  {
+    "Id": "land-001",
+    "CertificateNumber": "SHM-12.04.2023.001",
+    "Address": "Jl. Merdeka Raya No. 45",
+    "Village": "Sukasari",
+    "SubDistrict": "Bogor Timur",
+    "RegencyCity": "Kota Bogor",
+    "Province": "Jawa Barat",
+    "LandArea": 450,
+    "RightType": "Hak Milik (SHM)",
+    "AdminStatus": "Terdaftar Aktif",
+    "CompletenessStatus": "COMPLETE",
+    "CurrentOwnerName": "Budi Santoso",
+    "CreatedAt": "2023-01-15T08:00:00.000Z",
+    "owners": [
+      {
+        "name": "Budi Santoso",
+        "nationalId": "3271012345670001",
+        "phoneNumber": "081234567890",
+        "address": "Jl. Merdeka Raya No. 45, Bogor"
+      }
+    ],
+    "documents": [
+      {
+        "id": "doc-1",
+        "documentType": "Sertifikat Hak Milik",
+        "documentNumber": "SHM/001/BOGOR",
+        "documentDate": "2020-03-15"
+      },
+      {
+        "id": "doc-2",
+        "documentType": "Akta Jual Beli (AJB)",
+        "documentNumber": "AJB-12/PPAT/2020",
+        "documentDate": "2020-02-10"
+      },
+      {
+        "id": "doc-3",
+        "documentType": "SPPT PBB Terverifikasi",
+        "documentNumber": "PBB-2023-99881",
+        "documentDate": "2023-01-05"
+      }
+    ],
+    "histories": [
+      {
+        "id": "hist-1",
+        "transferDate": "2015-05-12",
+        "transferType": "Waris Keluarga",
+        "previousOwnerName": "Alm. Soetomo",
+        "newOwnerName": "Ahmad Dahlan"
+      },
+      {
+        "id": "hist-2",
+        "transferDate": "2020-02-10",
+        "transferType": "Akta Jual Beli (AJB)",
+        "previousOwnerName": "Ahmad Dahlan",
+        "newOwnerName": "Budi Santoso"
+      }
+    ]
+  },
+  {
+    "Id": "land-002",
+    "CertificateNumber": "HGB-04.09.2021.089",
+    "Address": "Kawasan Industri Sentul Kav. 8",
+    "Village": "Kadumangu",
+    "SubDistrict": "Babakan Madang",
+    "RegencyCity": "Kabupaten Bogor",
+    "Province": "Jawa Barat",
+    "LandArea": 1200,
+    "RightType": "Hak Guna Bangunan (HGB)",
+    "AdminStatus": "Proses Perpanjangan",
+    "CompletenessStatus": "NEEDS_REVIEW",
+    "CurrentOwnerName": "PT Sentul Jaya Abadi",
+    "CreatedAt": "2021-09-04T09:30:00.000Z",
+    "owners": [
+      {
+        "name": "PT Sentul Jaya Abadi",
+        "nationalId": "010023456012000",
+        "phoneNumber": "021-87901234",
+        "address": "Kav. 8 Sentul, Bogor"
+      }
+    ],
+    "documents": [
+      {
+        "id": "doc-4",
+        "documentType": "Sertifikat HGB",
+        "documentNumber": "HGB-89/BBN",
+        "documentDate": "2015-06-20"
+      }
+    ],
+    "histories": [
+      {
+        "id": "hist-3",
+        "transferDate": "2015-06-20",
+        "transferType": "Pemberian Hak Baru",
+        "previousOwnerName": "Pemerintah Daerah",
+        "newOwnerName": "PT Sentul Jaya Abadi"
+      }
+    ]
+  },
+  {
+    "Id": "land-003",
+    "CertificateNumber": "GIRIK-09.2018.114",
+    "Address": "Kampung Pasir Angin RT 02/04",
+    "Village": "Cipayung",
+    "SubDistrict": "Megamendung",
+    "RegencyCity": "Kabupaten Bogor",
+    "Province": "Jawa Barat",
+    "LandArea": 320,
+    "RightType": "Girik / Adat",
+    "AdminStatus": "Belum Bersertifikat",
+    "CompletenessStatus": "INCOMPLETE",
+    "CurrentOwnerName": "Siti Rahmawati",
+    "CreatedAt": "2018-09-01T10:15:00.000Z",
+    "owners": [
+      {
+        "name": "Siti Rahmawati",
+        "nationalId": "3201124508910003",
+        "phoneNumber": "085712345678",
+        "address": "Kp. Pasir Angin RT 02/04, Megamendung"
+      }
+    ],
+    "documents": [],
+    "histories": [
+      {
+        "id": "hist-4",
+        "transferDate": "2018-08-14",
+        "transferType": "Waris Tradisional",
+        "previousOwnerName": "Alm. H. Ridwan",
+        "newOwnerName": "Siti Rahmawati"
+      }
+    ]
+  }
+]
