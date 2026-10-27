@@ -206,10 +206,6 @@ Ikuti langkah-langkah di bawah ini untuk menunjukkan seluruh fungsionalitas MVP 
    - Nama pemegang hak terdaftar aktif langsung berubah menjadi `Hj. Nurhayati`.
    - Entri baru ditambahkan ke diagram linimasa: *"Dari: Drs. Hermawan Susanto ➔ Ke: Hj. Nurhayati"*.
 
-#### Skenario 6: Fitur Ekspor Data & Reset Demo
-1. Klik tombol **"📥 Ekspor JSON"** di header atas untuk mengunduh salinan berkas rekapitulasi data tanah dalam format JSON.
-2. Jika ingin mengulangi demonstrasi dari kondisi bersih, klik **"🔄 Reset Demo"** di header atas. Seluruh data seketika kembali ke 3 sampel data demo standar.
-
 ---
 
 ### 7. Daftar Endpoint REST Backend API
@@ -224,5 +220,4 @@ Ikuti langkah-langkah di bawah ini untuk menunjukkan seluruh fungsionalitas MVP 
 | `DELETE` | `/api/lands/:id/documents/:docId` | Mencabut berkas dokumen dan re-evaluasi status |
 | `POST` | `/api/lands/:id/histories` | Mencatat mutasi kepemilikan dan memperbarui pemilik aktif |
 | `DELETE` | `/api/lands/:id` | Menghapus bidang tanah dari sistem |
-| `POST` | `/api/reset-demo` | Mengembalikan data ke konfigurasi awal bawaan demo |
 

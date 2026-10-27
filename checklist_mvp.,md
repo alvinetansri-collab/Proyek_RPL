@@ -19,7 +19,7 @@
 | **Fitur 1 (Suite)** | **Pengujian Regresi Fitur 1 Asli** | Regresi | **SELESAI** | **PASSED** (9 tests) |
 | **Fitur 2 (Suite)** | **Pengujian Regresi Fitur 2 Asli** | Regresi | **SELESAI** | **PASSED** (9 tests) |
 | **Integrasi API** | **Backend REST API & Persistent Storage**<br>- Endpoint CRUD lengkap (`/api/lands`, `/documents`, `/histories`)<br>- Penyimpanan persisten file JSON (`data/lands.json`)<br>- Sinkronisasi LocalStorage di client saat offline | Inti | **SELESAI** | **PASSED** (Endpoint Verified) |
-| **Fitur Demo** | **Alat Bantu Demonstrasi & UX**<br>- Toast feedback notifikasi real-time<br>- Dialog konfirmasi hapus data tanah<br>- Tombol Reset Demo Data bawaan<br>- Tombol Ekspor Data Rekapitulasi (JSON)<br>- Interaktivitas kartu dashboard untuk filter cepat | Pendukung | **SELESAI** | **PASSED** (Interaktif) |
+| **Fitur UX & Keamanan** | **Alat Bantu Interaktivitas & UX**<br>- Toast feedback notifikasi real-time<br>- Dialog konfirmasi hapus data tanah<br>- Interaktivitas kartu dashboard untuk filter cepat | Pendukung | **SELESAI** | **PASSED** (Interaktif) |
 
 ---
 

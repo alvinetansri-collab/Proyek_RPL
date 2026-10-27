@@ -766,22 +766,6 @@ export default function App() {
                   : "Mode Standalone (Penyimpanan Lokal Aktif)"}
               </span>
             </div>
-
-            <button
-              onClick={handleExportJSON}
-              title="Ekspor Seluruh Data ke Format JSON"
-              className="bg-emerald-700 hover:bg-emerald-600 border border-emerald-600 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition"
-            >
-              📥 Ekspor JSON
-            </button>
-
-            <button
-              onClick={handleResetDemoData}
-              title="Kembalikan data ke awal untuk keperluan demo ulang"
-              className="bg-emerald-900/90 hover:bg-emerald-950 border border-emerald-700 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 text-emerald-200 transition"
-            >
-              🔄 Reset Demo
-            </button>
           </div>
         </div>
       </header>
