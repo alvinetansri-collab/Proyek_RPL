@@ -16,6 +16,34 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
+// Sanitasi & Masking PII untuk Logging Aman (Security Logging)
+export function maskPII(text: string): string {
+  if (!text) return text;
+  return text
+    .replace(/\b(\d{4})\d{8}(\d{4})\b/g, "$1********$2")
+    .replace(/\b(08\d{2})\d{3,6}(\d{2})\b/g, "$1****$2");
+}
+
+export function safeLog(level: "INFO" | "WARN" | "ERROR" | "AUDIT", message: string, meta?: any): void {
+  const timestamp = new Date().toISOString();
+  let sanitizedMeta = "";
+  if (meta) {
+    try {
+      const raw = typeof meta === "string" ? meta : JSON.stringify(meta);
+      sanitizedMeta = " | " + maskPII(raw);
+    } catch {
+      sanitizedMeta = " | [Metadata omitted]";
+    }
+  }
+  console.log(`[${timestamp}] [${level}] ${maskPII(message)}${sanitizedMeta}`);
+}
+
+// Request logger middleware aman
+app.use((req, _res, next) => {
+  safeLog("INFO", `HTTP ${req.method} ${req.path}`);
+  next();
+});
+
 // Path file penyimpanan persisten JSON lokal
 const dataDir = path.join(__dirname, "../data");
 const dataFilePath = path.join(dataDir, "lands.json");
@@ -342,9 +370,11 @@ app.post("/api/lands", (req, res) => {
 
     landsStore = [newLand, ...landsStore];
     saveLandsToDisk(landsStore);
+    safeLog("AUDIT", `Pendaftaran tanah baru: ${newLand.CertificateNumber} (Pemilik: ${newLand.CurrentOwnerName}, Luas: ${newLand.LandArea} m²)`);
 
     res.status(201).json(newLand);
   } catch (error) {
+    safeLog("ERROR", `Gagal mendaftarkan bidang tanah`, error instanceof Error ? error.message : undefined);
     res.status(500).json({ error: "Gagal mendaftarkan bidang tanah baru" });
   }
 });
@@ -405,6 +435,7 @@ app.post("/api/lands/:id/documents", (req, res) => {
 
     landsStore[landIndex] = updatedLand;
     saveLandsToDisk(landsStore);
+    safeLog("AUDIT", `Dokumen terlampir pada ${land.CertificateNumber}: ${createdDoc.documentType} (${createdDoc.documentNumber}) - Status baru: ${newStatus}`);
 
     res.status(201).json({
       message: "Dokumen berhasil dilampirkan",
@@ -412,6 +443,7 @@ app.post("/api/lands/:id/documents", (req, res) => {
       updatedLand,
     });
   } catch (error) {
+    safeLog("ERROR", `Gagal melampirkan berkas dokumen`, error instanceof Error ? error.message : undefined);
     res.status(500).json({ error: "Gagal melampirkan berkas dokumen" });
   }
 });
@@ -437,6 +469,7 @@ app.delete("/api/lands/:id/documents/:docId", (req, res) => {
 
     landsStore[landIndex] = updatedLand;
     saveLandsToDisk(landsStore);
+    safeLog("AUDIT", `Dokumen ID ${docId} dicabut dari ${land.CertificateNumber} - Status baru: ${newStatus}`);
 
     res.json({
       message: "Dokumen berhasil dicabut",
@@ -444,6 +477,7 @@ app.delete("/api/lands/:id/documents/:docId", (req, res) => {
       updatedLand,
     });
   } catch (error) {
+    safeLog("ERROR", `Gagal mencabut dokumen`, error instanceof Error ? error.message : undefined);
     res.status(500).json({ error: "Gagal mencabut dokumen" });
   }
 });
@@ -499,6 +533,7 @@ app.post("/api/lands/:id/histories", (req, res) => {
 
     landsStore[landIndex] = updatedLand;
     saveLandsToDisk(landsStore);
+    safeLog("AUDIT", `Mutasi hak tanah ${land.CertificateNumber}: dari ${previousOwner} ke ${newOwnerName} (${transferType})`);
 
     res.status(201).json({
       message: "Mutasi kepemilikan berhasil dicatat",
@@ -506,6 +541,7 @@ app.post("/api/lands/:id/histories", (req, res) => {
       updatedLand,
     });
   } catch (error) {
+    safeLog("ERROR", `Gagal mencatat mutasi kepemilikan`, error instanceof Error ? error.message : undefined);
     res.status(500).json({ error: "Gagal mencatat mutasi kepemilikan" });
   }
 });
@@ -521,12 +557,14 @@ app.delete("/api/lands/:id", (req, res) => {
 
     const deleted = landsStore.splice(landIndex, 1)[0];
     saveLandsToDisk(landsStore);
+    safeLog("AUDIT", `Bidang tanah dihapus: ${deleted.CertificateNumber} (Pemilik: ${deleted.CurrentOwnerName})`);
 
     res.json({
       message: "Bidang tanah berhasil dihapus",
       deletedLand: deleted,
     });
   } catch (error) {
+    safeLog("ERROR", `Gagal menghapus bidang tanah`, error instanceof Error ? error.message : undefined);
     res.status(500).json({ error: "Gagal menghapus bidang tanah" });
   }
 });
