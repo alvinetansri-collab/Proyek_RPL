@@ -289,3 +289,4 @@ RINGKASAN UJI: 63 Tests | 63 Passed | 0 Failed | 0 Skipped | Duration: ~304ms | 
 
 ## 5. Kesimpulan
 Seluruh kriteria keamanan, stabilitas arsitektur, logging tanpa kebocoran PII, dan kesiapan instalasi ulang dari nol (*fresh clone*) telah terverifikasi secara formal dan siap dipertanggungjawabkan dalam pengujian sistem.
+
