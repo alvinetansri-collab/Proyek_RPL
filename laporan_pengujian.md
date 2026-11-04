@@ -1,7 +1,7 @@
 # Laporan Evaluasi Teknis, Keamanan, dan Deployment MVP
 ## Sistem Monitoring Dokumen dan Status Kepemilikan Tanah
 
-Dokumen ini memuat dokumentasi komprehensif atas empat komponen utama pengujian dan deployment sistem:
+Dokumen ini memuat laporan resmi dan komprehensif atas empat komponen utama pengujian, standar keamanan, dan kesiapan operasional sistem:
 - **01. Hasil Uji Security dan Catatan Perubahan yang Relevan**
 - **02. Panduan README: Instalasi Ulang dan Akses Aplikasi / Paket Demo (Fresh Clone Repo, Build, Deploy)**
 - **03. Contoh Log Aman, Penyebab Error, dan Tindakan Perbaikannya**
@@ -12,52 +12,58 @@ Dokumen ini memuat dokumentasi komprehensif atas empat komponen utama pengujian 
 ## 01. Hasil Uji Security dan Catatan Perubahan yang Relevan
 
 ### A. Audit Keamanan Dependensi (Software Composition Analysis)
-Pengujian kerentanan dependensi dilakukan secara menyeluruh menggunakan `npm audit` terhadap 270 paket dependensi dalam monorepo (`apps/web`, `apps/api`, `packages/shared`).
+Pengujian kerentanan dependensi monorepo dilakukan menggunakan tool resmi `npm audit` terhadap 270 paket yang terpasang pada seluruh workspace (`apps/web`, `apps/api`, `packages/shared`).
 
 #### 1. Temuan Awal Kerentanan:
-Pada pemindaian awal ditemukan beberapa kerentanan pada paket pustaka pihak ketiga:
+Pada pemindaian awal repositori, terdeteksi beberapa kerentanan pada dependensi transitif pihak ketiga:
 - **`body-parser < 1.20.9` (Tingkat Keparahan: HIGH - GHSA-27r3-jxmh-p828)**: Kerentanan *Denial of Service* (DoS) melalui manipulasi *trailing bytes* pada request body terkompresi.
-- **`qs 6.7.0 - 6.16.0` (Tingkat Keparahan: MODERATE - GHSA-6pq8-jhm2-2vcw)**: Ketidakmampuan menangani uncaught TypeError pada elemen array non-string yang berpotensi *Denial of Service*.
-- **`postcss-selector-parser < 6.1.5` (Tingkat Keparahan: MODERATE - GHSA-rj75-hqrm-r3gf)**: Kompleksitas komputasi kuadratik pada flat selector parsing.
+- **`qs 6.7.0 - 6.16.0` (Tingkat Keparahan: MODERATE - GHSA-6pq8-jhm2-2vcw)**: Kesalahan penanganan unhandled TypeError pada elemen array non-string yang berpotensi DoS.
+- **`postcss-selector-parser < 6.1.5` (Tingkat Keparahan: MODERATE - GHSA-rj75-hqrm-r3gf)**: Kompleksitas parsing kuadratik pada flat selector parsing.
 
-#### 2. Tindakan Remediasi:
-Dilakukan proses pembaruan keamanan otomatis:
+#### 2. Tindakan Remediasi & Bukti Commit:
+Dilakukan proses pembaruan keamanan otomatis pada commit [`69f04e5`](https://github.com/alvinetansri-collab/Proyek_RPL/commit/69f04e58151304d36693a9812fe35088b3212d12) (2 November 2026):
 ```bash
 npm audit fix
 ```
 #### 3. Hasil Remediasi:
 - Seluruh dependensi runtime server produksi (`body-parser`, `qs`, `express`) berhasil diperbarui ke versi stabil yang bebas dari kerentanan kritis.
-- **Hasil Akhir**: **0 Kerentanan Tingkat HIGH pada Dependensi Produksi Runtime**.
-- Kerentanan yang tersisa hanya berada pada development tools internal (`ts-node-dev`, `esbuild dev-server`), yang terisolasi dan tidak disertakan dalam bundle produksi.
+- **Status Runtime Produksi**: **0 Kerentanan Tingkat HIGH pada Dependensi Runtime Produksi**.
+- Kerentanan tersisa hanya berada pada development tools (`ts-node-dev` / `esbuild dev-server`), yang terisolasi di lingkungan dev dan tidak disertakan dalam artefak build rilis produksi.
 
 ---
 
-### B. Evaluasi Keamanan Lapisan Aplikasi (OWASP Top 10 Matrix)
+### B. Evaluasi Keamanan Lapisan Aplikasi (OWASP Top 10 Evaluation Matrix)
 
-| Kategori Ancaman OWASP | Status | Mekanisme Proteksi & Kontrol Keamanan |
+Evaluasi berikut menyajikan tinjauan objektif dan transparan terhadap 10 kategori ancaman keamanan aplikasi web OWASP Top 10, membedakan secara jujur antara mekanisme proteksi yang telah aktif dan batasan arsitektural yang didokumentasikan sebagai backlog:
+
+| Kategori Ancaman OWASP | Status Implementasi | Evaluasi Teknis, Kontrol Keamanan, & Batasan |
 | :--- | :---: | :--- |
-| **A01: Broken Access Control & IDOR** | **AMAN** | Validasi integritas ID bidang tanah (`landIndex !== -1`) sebelum mengeksekusi operasi penambahan berkas, pencabutan berkas, mutasi, atau penghapusan data tanah. |
-| **A02: Cryptographic Failures & PII Exposure** | **AMAN** | Data sensitif masyarakat seperti Nomor Induk Kependudukan (NIK 16 digit) dan nomor telepon secara otomatis disamarkan (*masked*) pada log sistem (`maskPII()`). Tidak ada credential database yang disimpan secara plain text. |
-| **A03: Injection (SQL / NoSQL / Command Injection)** | **AMAN** | Arsitektur tidak menggunakan konkatenasi string SQL mentah. Seluruh logika transaksi dan manipulasi data dikelola melalui domain logic bertipe TypeScript ketat (`@proyek-rpl/shared`) dan serialisasi JSON terisolasi. |
-| **A04: Insecure Design** | **AMAN** | Diterapkan validasi ganda (*Defense-in-Depth*): validasi di sisi client (React) dan validasi di sisi server (Express) menggunakan aturan bisnis identik pada shared module. Nomor sertifikat ganda langsung ditolak sebelum disimpan. |
-| **A05: Security Misconfiguration** | **AMAN** | Konfigurasi CORS diatur eksplisit. Port aplikasi dipisah secara tegas (Backend API: 5000, Frontend Web: 3000). Error handler tidak membocorkan stack trace internal ke client. |
-| **A06: Vulnerable and Outdated Components** | **AMAN** | Dependensi monorepo diaudit berkala menggunakan `npm audit` dan menggunakan versi terverifikasi. |
-| **A07: Identification and Authentication Failures** | **AMAN** | Rantai silsilah kepemilikan terekam dalam *audit trail* linimasa yang memelihara jejak pemilik sebelumnya ke pemilik baru. |
-| **A08: Software and Data Integrity Failures** | **AMAN** | Serialisasi data tanah dilakukan secara atomik ke disk (`saveLandsToDisk`) dan disinkronkan ke `localStorage` client untuk mencegah inkonsistensi data saat crash. |
-| **A09: Security Logging and Monitoring Failures** | **AMAN** | Setiap aksi pendaftaran tanah, mutasi, pelampiran berkas, dan pencabutan dokumen dicatat ke log server berformat terstruktur dengan level `AUDIT` dan `ERROR`. |
-| **A10: Server-Side Request Forgery (SSRF)** | **AMAN** | Server API tidak menerima URL dinamis dari input pengguna untuk melakukan panggilan HTTP outbound ke pihak ketiga. |
+| **A01: Broken Access Control & IDOR** | **`[!] LIMITASI MVP`**<br>*(Backlog Arsitektur)* | **Evaluasi Transparan**: Pemeriksaan `landIndex !== -1` pada endpoint API semata-mata merupakan validasi keberadaan entitas data di memori untuk mencegah *null pointer exception*, bukan kontrol otorisasi pengguna. Pada versi MVP saat ini, sistem belum mengimplementasikan mekanisme autentikasi (login/session token/JWT) maupun *Role-Based Access Control* (RBAC). Endpoint pembacaan, modifikasi, penambahan dokumen, pencatatan mutasi, penghapusan tanah, dan reset demo terbuka secara publik pada antarmuka demo lokal. Rencana perbaikan: Middleware verifikasi JWT dan matriks peran pengguna (SuperAdmin BPN, Verifikator Dokumen, Notaris/PPAT, Publik) tercatat sebagai prioritas backlog pengembangan fase berikutnya. |
+| **A02: Cryptographic Failures & PII Exposure** | **`[OK] AMAN DENGAN CATATAN`** | Data sensitif masyarakat berupa NIK 16 digit dan berbagai format nomor telepon (lokal, internasional, kode area, pemisah strip/spasi) secara otomatis disamarkan (*masked*) pada log sistem melalui `maskPII()`. **Transparansi Kredensial**: Repositori memuat kredensial template default untuk simulasi pengembang lokal pada [`docker-compose.yml`](./docker-compose.yml) (`rootpassword`) dan [`.env.example`](./.env.example). Berkas `.env` produksi yang sesungguhnya diabaikan oleh `.gitignore` dan tidak ada secret/kunci API produksi yang bocor ke riwayat Git. |
+| **A03: Injection (SQL / NoSQL / Command Injection)** | **`[OK] AMAN`** | Logika aplikasi menggunakan domain logic bertipe TypeScript ketat ([`packages/shared`](./packages/shared)). Tidak ada konstruksi query SQL mentah berbasis konkatenasi string (`SELECT ... WHERE`). Penyimpanan data JSON menggunakan fungsi terisolasi `JSON.stringify` dan `JSON.parse` yang tervalidasi. |
+| **A04: Insecure Design** | **`[OK] AMAN`** | Validasi aturan bisnis diterapkan ganda (*Defense-in-Depth*): di sisi antarmuka React dan di sisi server Express. Nomor sertifikat ganda langsung ditolak pada tahap validasi awal sebelum penyimpanan. |
+| **A05: Security Misconfiguration** | **`[OK] AMAN (Whitelist Origin)`** | Server API Express mengonfigurasi middleware CORS dengan *origin whitelist* eksplisit (`http://localhost:3000`, `http://127.0.0.1:3000`, `http://localhost:4173`, `http://localhost:5173`) serta mendukung variabel lingkungan `CORS_ORIGIN` untuk deployment hosting remote. Request dari origin tidak dikenal akan ditolak. Error handler tidak membocorkan stack trace internal. |
+| **A06: Vulnerable and Outdated Components** | **`[OK] AMAN`** | Pustaka diaudit berkala melalui `npm audit`, seluruh dependensi runtime server berada pada versi bebas kerentanan HIGH. |
+| **A07: Identification and Authentication Failures** | **`[!] LIMITASI MVP`**<br>*(Backlog Arsitektur)* | **Evaluasi Transparan**: Sistem saat ini belum mengimplementasikan otentikasi identitas operator (belum ada login/password/MFA). Linimasa riwayat mutasi kepemilikan berfungsi sebagai jejak historis silsilah bisnis pertanahan (*business provenance audit trail*), bukan sebagai mekanisme tanda tangan digital kriptografis atau otentikasi identitas pengguna. |
+| **A08: Software and Data Integrity Failures** | **`[OK] AMAN (Atomic File Persistence)`** | Fungsi [`saveLandsToDisk()`](./apps/api/src/index.ts) menggunakan mekanisme penulisan atomik: menulis ke file sementara (`lands.json.tmp.<timestamp>`) terlebih dahulu, lalu mengeksekusi `fs.renameSync` secara atomik ke file target. Jika penyimpanan disk gagal, `safeLog("ERROR", ...)` mencatat rincian kegagalan, state di-rollback, dan endpoint mengembalikan status HTTP 500 ke client, mencegah respons sukses palsu saat disk penuh/rusak. |
+| **A09: Security Logging and Monitoring Failures** | **`[OK] AMAN (Tersanitasi PII)`** | Setiap aksi pendaftaran tanah, penambahan dokumen, mutasi hak, validasi gagal, dan penghapusan dicatat ke log server berformat terstruktur dengan penandaan level `INFO`, `WARN`, `ERROR`, dan `AUDIT` dengan PII tersanitasi. |
+| **A10: Server-Side Request Forgery (SSRF)** | **`[OK] AMAN`** | Server API tidak menerima URL dinamis dari input pengguna untuk melakukan panggilan HTTP outbound ke pihak ketiga. |
 
 ---
 
 ### C. Catatan Perubahan Keamanan (Security Changelog)
 
-| ID Perubahan | Modul Terkait | Rincian Perubahan Keamanan |
-| :---: | :--- | :--- |
-| **`SEC-001`** | `package-lock.json` | **Remediasi Dependensi**: Patch keamanan pada `body-parser` dan `qs` via `npm audit fix` untuk mencegah celah DoS. |
-| **`SEC-002`** | `apps/api/src/index.ts` | **Penerapan PII Masking**: Implementasi fungsi `maskPII()` untuk menyamarkan 8 digit tengah NIK dan nomor telepon pada terminal server dan file log. |
-| **`SEC-003`** | `apps/api/src/index.ts` | **Sanitasi Error Response**: Mengganti respons error internal server agar tidak mengirimkan raw stack trace atau path direktori lokal komputer ke client. |
-| **`SEC-004`** | `packages/shared`, `apps/api` | **Validasi Aturan Bisnis Ganda**: Pencegahan nomor sertifikat duplikat, validasi luas tanah positif ($> 0$), dan nomor dokumen unik per bidang tanah. |
-| **`SEC-005`** | `apps/web/src/App.tsx` | **Isolasi Penyimpanan Client**: Penanganan aman *graceful fallback* ke `localStorage` saat server API offline tanpa menyebabkan crash antarmuka. |
+| Tanggal | ID Perubahan | Rincian Perubahan Keamanan | Modul Terkait |
+| :---: | :---: | :--- | :--- |
+| **2026-11-04** | `SEC-006` | **Penyimpanan Atomik & Error Handling HTTP 500**: Mengimplementasikan `atomicWriteFileSync` (temp file + renameSync) untuk mencegah korupsi file JSON saat crash, serta propagasi kegagalan disk ke client sebagai status HTTP 500. | [`apps/api/src/security.ts`](./apps/api/src/security.ts), [`apps/api/src/index.ts`](./apps/api/src/index.ts) |
+| **2026-11-04** | `SEC-007` | **CORS Origin Whitelist Eksplisit**: Mengganti wildcard CORS terbuka dengan whitelist origin lokal terdaftar dan dukungan dinamis variabel `CORS_ORIGIN`. | [`apps/api/src/index.ts`](./apps/api/src/index.ts) |
+| **2026-11-04** | `SEC-008` | **Penyempurnaan PII Masking Multi-Format**: Memperluas regex `maskPII()` untuk menyamarkan nomor telepon format internasional `+62`, kode area `(021)`, serta nomor dengan pemisah strip atau spasi. | [`packages/shared/src/security/masking.ts`](./packages/shared/src/security/masking.ts), [`apps/api/src/security.ts`](./apps/api/src/security.ts) |
+| **2026-11-04** | `SEC-009` | **Dynamic Frontend API Endpoint**: Menghapus hardcoded URL API localhost pada frontend React, menggantikannya dengan `import.meta.env.VITE_API_URL` untuk kesiapan hosting cloud. | [`apps/web/src/App.tsx`](./apps/web/src/App.tsx), [`apps/web/.env.example`](./apps/web/.env.example) |
+| **2026-11-02** | `SEC-001` | **Remediasi Kerentanan Dependensi**: Memperbarui `body-parser` dan `qs` ke versi aman via `npm audit fix` guna mencegah DoS payload (commit `69f04e5`). | `package-lock.json` |
+| **2026-11-02** | `SEC-002` | **Penerapan PII Masking pada Logger Server**: Menambahkan fungsi `maskPII()` untuk menyamarkan 8 digit tengah NIK dan nomor telepon pada terminal server dan file log. | [`apps/api/src/index.ts`](./apps/api/src/index.ts) |
+| **2026-11-02** | `SEC-003` | **Sanitasi Pesan Kesalahan Server**: Mengganti respons error internal server agar tidak mengirimkan raw stack trace atau path direktori lokal komputer ke client. | [`apps/api/src/index.ts`](./apps/api/src/index.ts) |
+| **2026-10-27** | `SEC-004` | **Validasi Aturan Bisnis Ganda (Client & Server)**: Memastikan nomor sertifikat unik, luas tanah positif ($> 0$), dan nomor dokumen tidak duplikat divalidasi identik pada shared module. | [`packages/shared`](./packages/shared), [`apps/api`](./apps/api) |
+| **2026-10-26** | `SEC-005` | **Resilience Fallback & Storage Isolation**: Mengisolasi penyimpanan data lokal client ke `localStorage` dengan penanganan aman terhadap kuota browser. | [`apps/web/src/App.tsx`](./apps/web/src/App.tsx) |
 
 ---
 
@@ -69,7 +75,9 @@ Seluruh petunjuk instalasi ulang dan akses aplikasi dari repositori bersih telah
 
 #### 1. Prasyarat Sistem
 - **Git**: Versi 2.x atau lebih baru.
-- **Node.js**: Versi `18.x`, `20.x`, atau `22.x/24.x` (LTS direkomendasikan).
+- **Node.js**: **Versi `>= 22.6.0` (Rekomendasi: Node.js 22 LTS atau Node.js 24)**.  
+  > [!IMPORTANT]
+  > **Rasionalisasi Versi Node.js**: Skrip `npm test` mengeksekusi perintah `node --test tests/**/*.test.ts` langsung pada berkas TypeScript tanpa loader pihak ketiga (`ts-node` / `tsx`), dengan memanfaatkan fitur *Native TypeScript Type Stripping* (`--experimental-strip-types`) yang diperkenalkan mulai Node.js v22.6.0+. Jika Anda menggunakan Node.js 18 atau 20, runner pengujian memerlukan loader tambahan.
 - **npm**: Versi `9.x` atau lebih baru.
 - **Web Browser**: Chrome, Edge, Firefox, atau Safari versi modern.
 
@@ -88,18 +96,23 @@ npm install
 *(Catatan Windows: Jika eksekusi script dibatasi oleh execution policy PowerShell, gunakan `npm.cmd install`)*
 
 #### 4. Kompilasi Build Seluruh Modul Monorepo
-Kompilasi paket `@proyek-rpl/shared`, `apps/api`, dan `apps/web`:
+Kompilasi seluruh modul monorepo:
 ```bash
 npm run build
 ```
-Proses ini akan mengompilasi TypeScript dan mem-bundle aset web Vite ke folder `dist` (`exit code 0`).
+Rincian eksekusi build:
+- `packages/shared`: Mengeksekusi `tsc --noEmit` untuk memvalidasi tipe TypeScript seluruh modul tanpa menghasilkan folder `dist/` (karena modul ini dikonsumsi langsung oleh workspace).
+- `apps/api`: Mengompilasi TypeScript ke artefak CommonJS di folder `apps/api/dist/`.
+- `apps/web`: Mengompilasi TypeScript dan mem-bundling aset web Vite teroptimasi ke folder `apps/web/dist/`.
+
+Pastikan proses build selesai dengan `exit code 0`.
 
 #### 5. Eksekusi Pengujian Unit Test
-Verifikasi keandalan logika bisnis dengan menjalankan seluruh unit test:
+Verifikasi keandalan logika bisnis dan keamanan dengan menjalankan unit test:
 ```bash
 npm test
 ```
-Seluruh 63 unit test wajib berstatus **All Passed (0 failed)**.
+Seluruh 70 unit test wajib berstatus **All Passed (0 failed, 0 skipped)**.
 
 ---
 
@@ -136,9 +149,12 @@ Akses `http://localhost:3000/`. Aplikasi secara otomatis beralih ke **Mode Stand
 
 ---
 
-### D. Panduan Build & Deploy Production Preview
-Untuk menjalankan versi produksi (*production bundle*):
+### D. Panduan Build & Deploy (Preview Lokal vs Hosting Remote)
 
+Dokumentasi ini membedakan secara tegas antara pengujian build lokal dan panduan deployment ke server hosting publik:
+
+#### 1. Local Production Preview (Simulasi Build Lokal)
+Untuk menguji artefak terkompilasi sebelum di-deploy ke hosting publik:
 ```bash
 # 1. Build seluruh proyek
 npm run build
@@ -146,9 +162,15 @@ npm run build
 # 2. Jalankan server produksi API (Port 5000)
 npm run start:api
 
-# 3. Jalankan serving preview frontend produksi (Vite Preview)
+# 3. Jalankan serving preview frontend produksi (Vite Preview di Port 4173)
 npm run preview:web
 ```
+
+#### 2. Panduan Remote Cloud Deployment (Hosting Publik)
+Jika aplikasi hendak di-hosting di server publik (Vercel, Netlify, Railway, Docker, atau VPS):
+- **Konfigurasi Dynamic Backend**: Pada `apps/web/.env`, atur `VITE_API_URL` ke domain backend hosting (misal `https://api.domain-anda.com/api`).
+- **Konfigurasi CORS Backend**: Pada server backend, atur variabel lingkungan `CORS_ORIGIN=https://landtracker.domain-anda.com` agar server menerima request dari frontend hosting.
+- **Frontend Build**: Jalankan `npm run build:web` dan publikasikan folder **`apps/web/dist`** ke layanan static hosting.
 
 ---
 
@@ -159,59 +181,52 @@ npm run preview:web
 #### 1. Contoh Log yang TIDAK AMAN (Rentan Kebocoran Data PII & Sistem)
 ```text
 # CONTOH BURUK 1: Kebocoran PII (NIK & Nomor Telepon Lengkap Tercetak di Log)
-[2026-11-02T16:20:00Z] [DEBUG] User input: {"name": "Budi Santoso", "nik": "3271012345670001", "phone": "081234567890", "address": "Jl. Merdeka No. 45"}
+[2026-11-04T15:20:00Z] [DEBUG] User input: {"name": "Budi Santoso", "nik": "3271012345670001", "phone": "081234567890", "address": "Jl. Merdeka No. 45"}
 
 # CONTOH BURUK 2: Kebocoran Stack Trace & Path Direktori Internal Komputer
-[2026-11-02T16:21:15Z] [ERROR] InternalServerError: connect ECONNREFUSED 127.0.0.1:3306
+[2026-11-04T15:21:15Z] [ERROR] InternalServerError: connect ECONNREFUSED 127.0.0.1:3306
    at TCPConnectWrap.afterConnect [as oncomplete] (net.js:1146:16)
    at C:\Users\hp5cd\Documents\proyek rpl\apps\api\src\database.ts:45:12
    Database password leaked: db_pass_secret_2026
 ```
 
 #### 2. Contoh Log yang AMAN (Tersanitasi & Terstruktur)
-*Implementasi nyata pada [`apps/api/src/index.ts`](file:///c:/Users/hp5cd/Documents/proyek%20rpl/apps/api/src/index.ts):*
+*Implementasi nyata pada [`apps/api/src/index.ts`](./apps/api/src/index.ts) dan [`apps/api/src/security.ts`](./apps/api/src/security.ts):*
 
 ```text
-# CONTOH AMAN 1: Pendaftaran Bidang Tanah Baru (PII Disamarkan Otomatis)
-[2026-11-02T16:25:30.120Z] [INFO] HTTP POST /api/lands
-[2026-11-02T16:25:30.145Z] [AUDIT] Pendaftaran tanah baru: SHM-12.04.2024.088 (Pemilik: Muhammad Farhan, Luas: 150 m²) | {"nik":"3201********0001","phone":"0812****90"}
+# CONTOH AMAN 1: Pendaftaran Bidang Tanah Baru (PII Metadata Disamarkan Otomatis)
+[2026-11-04T15:27:30.901Z] [INFO] HTTP POST /api/lands
+[2026-11-04T15:27:30.905Z] [AUDIT] Pendaftaran tanah baru: SHM-12.04.2024.999 (Pemilik: Muhammad Farhan, Luas: 150 m²) | {"nik":"3201********0002","phone":"0812****90"}
 
-# CONTOH AMAN 2: Pelampiran Dokumen Baru
-[2026-11-02T16:26:00.812Z] [INFO] HTTP POST /api/lands/land-001/documents
-[2026-11-02T16:26:00.825Z] [AUDIT] Dokumen terlampir pada SHM-12.04.2023.001: Akta Jual Beli (AJB) (AJB-12/PPAT/2020) - Status baru: COMPLETE
+# CONTOH AMAN 2: Penanganan Validasi Gagal (Tercatat di Level WARN Tanpa Membocorkan Error Sensitif)
+[2026-11-04T15:28:02.500Z] [WARN] Validasi pendaftaran tanah gagal: Nomor sertifikat 'SHM-12.04.2023.001' sudah terdaftar dalam sistem. | {"certificateNumber":"SHM-12.04.2023.001","ownerName":"Muhammad Farhan"}
 
-# CONTOH AMAN 3: Pencatatan Mutasi Peralihan Hak
-[2026-11-02T16:27:14.330Z] [INFO] HTTP POST /api/lands/land-001/histories
-[2026-11-02T16:27:14.348Z] [AUDIT] Mutasi hak tanah SHM-12.04.2023.001: dari Budi Santoso ke Hj. Nurhayati (Akta Jual Beli (AJB))
+# CONTOH AMAN 3: Pelampiran Dokumen Baru
+[2026-11-04T15:28:10.812Z] [INFO] HTTP POST /api/lands/land-001/documents
+[2026-11-04T15:28:10.825Z] [AUDIT] Dokumen terlampir pada SHM-12.04.2023.001: Akta Jual Beli (AJB) (AJB-12/PPAT/2020) - Status baru: COMPLETE
 
-# CONTOH AMAN 4: Penanganan Validasi Gagal (Sanitized Response)
-[2026-11-02T16:28:02.500Z] [WARN] Validasi gagal pada POST /api/lands: Nomor sertifikat 'SHM-12.04.2023.001' sudah terdaftar dalam sistem.
-[2026-11-02T16:28:02.502Z] [INFO] Client HTTP Response: 400 Bad Request - {"error":"Validasi gagal","details":["Nomor sertifikat sudah terdaftar"]}
+# CONTOH AMAN 4: Pencatatan Mutasi Peralihan Hak
+[2026-11-04T15:29:14.330Z] [INFO] HTTP POST /api/lands/land-001/histories
+[2026-11-04T15:29:14.348Z] [AUDIT] Mutasi hak tanah SHM-12.04.2023.001: dari Budi Santoso ke Hj. Nurhayati (Akta Jual Beli (AJB))
+
+# CONTOH AMAN 5: Penanganan Error Penyimpanan Disk (Tersanitasi & Terstruktur)
+[2026-11-04T15:30:00.120Z] [ERROR] Gagal menyimpan data ke disk secara atomik | EACCES: permission denied
 ```
 
-#### 3. Implementasi Fungsi Masking PII pada Kode Server:
+#### 3. Implementasi Fungsi Masking PII pada Kode:
 ```typescript
+// Lokasi: packages/shared/src/security/masking.ts
 export function maskPII(text: string): string {
   if (!text) return text;
   return text
-    // Masking 8 digit tengah NIK (16 digit)
+    // Masking NIK: 16 digit angka berurutan -> 4 digit awal + 8 asterisk + 4 digit akhir
     .replace(/\b(\d{4})\d{8}(\d{4})\b/g, "$1********$2")
-    // Masking digit tengah nomor telepon
-    .replace(/\b(08\d{2})\d{3,6}(\d{2})\b/g, "$1****$2");
-}
-
-export function safeLog(level: "INFO" | "WARN" | "ERROR" | "AUDIT", message: string, meta?: any): void {
-  const timestamp = new Date().toISOString();
-  let sanitizedMeta = "";
-  if (meta) {
-    try {
-      const raw = typeof meta === "string" ? meta : JSON.stringify(meta);
-      sanitizedMeta = " | " + maskPII(raw);
-    } catch {
-      sanitizedMeta = " | [Metadata omitted]";
-    }
-  }
-  console.log(`[${timestamp}] [${level}] ${maskPII(message)}${sanitizedMeta}`);
+    // Masking nomor telepon seluler standar 08xx (dengan atau tanpa strip/spasi)
+    .replace(/\b(08\d{2})[-\s]?\d{2,4}[-\s]?\d{0,4}[-\s]?(\d{2,4})\b/g, "$1****$2")
+    // Masking telepon internasional (+62 / 62) dengan atau tanpa pemisah strip/spasi
+    .replace(/(\+?62)\s*(\d{2,3})[-\s]?\d{2,4}[-\s]?\d{0,4}[-\s]?(\d{2,4})\b/g, "$1$2****$3")
+    // Masking telepon lokal dengan kode area misal (021)
+    .replace(/(\(\d{3,4}\))\s*\d{2,4}[-\s]?(\d{2,4})\b/g, "$1****$2");
 }
 ```
 
@@ -248,9 +263,8 @@ export function safeLog(level: "INFO" | "WARN" | "ERROR" | "AUDIT", message: str
 
 ## 04. Verifikasi Fresh Clone, Pull Request, Install, Run, Build, Deploy & Unit Test All Passed
 
-Simulasi pengujian lingkungan bersih (*Clean Room Simulation*) telah dijalankan pada direktori sementara terisolasi (`%TEMP%\fresh_clone_verify`) untuk memastikan repositori dari GitHub dapat diinstal ulang dan dijalankan dari nol tanpa kendala:
+Simulasi pengujian lingkungan bersih (*Clean Room Simulation*) diverifikasi melalui cabang Pull Request terisolasi:
 
-### A. Perintah Eksekusi Simulasi
 ```powershell
 # 1. Kloning Repositori Bersih dari GitHub
 git clone https://github.com/alvinetansri-collab/Proyek_RPL.git fresh_clone_verify
@@ -265,88 +279,103 @@ npm.cmd install
 
 # 4. Kompilasi Build Seluruh Modul Monorepo
 npm.cmd run build
-# [Hasil: @proyek-rpl/shared (tsc) OK, apps/api (tsc) OK, apps/web (vite build) OK - Built in 1.51s, exit code 0]
+# [Hasil: @proyek-rpl/shared (tsc) OK, apps/api (tsc) OK, apps/web (vite build) OK - Built in 4.19s, exit code 0]
 
 # 5. Eksekusi Seluruh Unit Test
 npm.cmd test
 ```
 
-### B. Bukti Log Eksekusi Unit Test (63 Tests - ALL PASSED)
+*Tautan Pull Request / Compare GitHub:*  
+👉 [https://github.com/alvinetansri-collab/Proyek_RPL/compare/main...test/verify-fresh-clone](https://github.com/alvinetansri-collab/Proyek_RPL/compare/main...test/verify-fresh-clone)
+
+### Hasil Eksekusi Unit Test (70 Tests - ALL PASSED):
 
 ```text
 > test
 > node --test tests/**/*.test.ts
 
-✔ Fitur 1 - Pencarian: Berhasil mencari berdasarkan nomor sertifikat secara parsial (6.28ms)
-✔ Fitur 1 - Pencarian: Berhasil mencari berdasarkan nama pemilik (case-insensitive) (0.42ms)
-✔ Fitur 1 - Pencarian: Berhasil mencari berdasarkan wilayah kecamatan / kabupaten (0.33ms)
+✔ Fitur 1 - Pencarian: Berhasil mencari berdasarkan nomor sertifikat secara parsial (2.20ms)
+✔ Fitur 1 - Pencarian: Berhasil mencari berdasarkan nama pemilik (case-insensitive) (0.31ms)
+✔ Fitur 1 - Pencarian: Berhasil mencari berdasarkan wilayah kecamatan / kabupaten (0.42ms)
 ✔ Fitur 1 - Pencarian: Mengembalikan array kosong jika kueri pencarian tidak cocok (0.26ms)
-✔ Fitur 1 - Pencarian: Filter kombinasi teks pencarian dan jenis hak tanah (0.27ms)
-✔ Fitur 1 - Validasi: Lolos validasi saat data pendaftaran tanah lengkap dan benar (0.34ms)
-✔ Fitur 1 - Validasi: Menolak pendaftaran jika nomor sertifikat kosong (0.32ms)
-✔ Fitur 1 - Validasi: Menolak pendaftaran jika nomor sertifikat sudah ada (duplikat) (0.23ms)
-✔ Fitur 1 - Validasi: Menolak pendaftaran jika luas tanah <= 0 atau tidak valid (0.65ms)
-✔ Fitur 2 - Evaluasi: Menghasilkan status COMPLETE jika terdapat minimal 3 dokumen (2.33ms)
-✔ Fitur 2 - Evaluasi: Menghasilkan status NEEDS_REVIEW jika terdapat 1 atau 2 dokumen (0.35ms)
-✔ Fitur 2 - Evaluasi: Menghasilkan status INCOMPLETE jika belum ada dokumen yang dicatat (0.24ms)
-✔ Fitur 2 - Standar Lencana Warna: Status COMPLETE menggunakan label 'Lengkap' dan warna hijau (0.46ms)
-✔ Fitur 2 - Standar Lencana Warna: Status NEEDS_REVIEW menggunakan label 'Perlu Diperiksa' dan warna oranye (0.50ms)
-✔ Fitur 2 - Standar Lencana Warna: Status INCOMPLETE menggunakan label 'Belum Lengkap' dan warna merah (0.28ms)
-✔ Fitur 2 - Linimasa Riwayat: Mengurutkan silsilah perpindahan hak tanah secara kronologis (ascending) (0.43ms)
-✔ Fitur 2 - Linimasa Riwayat: Mengurutkan silsilah perpindahan hak tanah dari yang terbaru (descending) (0.38ms)
-✔ Fitur 2 - Metrik Dashboard: Menghitung akumulasi statistik ringkasan dan rasio kelengkapan (1.27ms)
-✔ US-1: Pendaftaran bidang tanah baru berhasil jika seluruh field wajib valid (1.70ms)
-✔ US-1: Menolak pendaftaran jika nomor sertifikat kosong (0.46ms)
-✔ US-1: Menolak pendaftaran jika nama pemilik kosong (0.21ms)
-✔ US-1: Menolak pendaftaran jika alamat bidang tanah kosong (0.19ms)
-✔ US-1: Menolak pendaftaran jika desa / kelurahan kosong (0.76ms)
-✔ US-1: Menolak pendaftaran jika kecamatan kosong (0.25ms)
-✔ US-1: Menolak pendaftaran jika luas tanah bernilai 0 (0.20ms)
-✔ US-1: Menolak pendaftaran jika luas tanah bernilai negatif (0.16ms)
-✔ US-1: Mencegah duplikasi nomor sertifikat yang sudah terdaftar dalam sistem (0.56ms)
-✔ US-2: Berhasil mencari berdasarkan nomor sertifikat secara parsial (1.45ms)
-✔ US-2: Berhasil mencari berdasarkan nama pemilik secara case-insensitive (0.43ms)
-✔ US-2: Berhasil mencari berdasarkan nama desa / kelurahan (0.30ms)
-✔ US-2: Berhasil mencari berdasarkan nama kecamatan (0.25ms)
-✔ US-2: Berhasil mencari berdasarkan nama kabupaten/kota (0.20ms)
-✔ US-2: Filter jenis hak tanah Hak Milik (SHM) secara eksklusif (0.22ms)
-✔ US-2: Filter jenis hak tanah Hak Guna Bangunan (HGB) (0.19ms)
-✔ US-2: Filter jenis hak tanah Girik / Adat (0.16ms)
-✔ US-2: Filter berdasarkan status kelengkapan dokumen COMPLETE (0.22ms)
-✔ US-2: Kueri yang tidak cocok menghasilkan array kosong tanpa runtime error (0.83ms)
-✔ US-3: Bidang tanah dengan 3 dokumen atau lebih dievaluasi sebagai COMPLETE (1.57ms)
-✔ US-3: Bidang tanah dengan 2 dokumen dievaluasi sebagai NEEDS_REVIEW (0.34ms)
-✔ US-3: Bidang tanah dengan 1 dokumen dievaluasi sebagai NEEDS_REVIEW (0.28ms)
-✔ US-3: Bidang tanah tanpa dokumen (0 berkas) dievaluasi sebagai INCOMPLETE (0.14ms)
-✔ US-3: Pemetaan lencana status COMPLETE menghasilkan label 'Lengkap' dan warna hijau (0.20ms)
-✔ US-3: Pemetaan lencana status NEEDS_REVIEW menghasilkan label 'Perlu Diperiksa' dan warna oranye (0.11ms)
-✔ US-3: Pemetaan lencana status INCOMPLETE menghasilkan label 'Belum Lengkap' dan warna merah (0.08ms)
-✔ US-3: Setiap status kelengkapan memiliki deskripsi penjelasan yang informatif (0.09ms)
-✔ US-4: Mengurutkan linimasa silsilah mutasi tanah secara kronologis (ascending: terlama ke terbaru) (0.74ms)
-✔ US-4: Mengurutkan linimasa silsilah mutasi tanah dari yang terbaru (descending: terbaru ke terlama) (0.11ms)
-✔ US-4: Menangani array linimasa riwayat yang kosong tanpa error (0.07ms)
-✔ US-4: Menangani entri riwayat dengan tanggal tidak valid secara aman tanpa melempar exception (0.18ms)
-✔ US-4: Data riwayat kepemilikan memelihara rantai transfer dari pemilik sebelumnya ke pemilik baru (0.09ms)
-✔ US-4: Validasi mutasi kepemilikan menolak jika nama pemilik baru kosong (0.17ms)
-✔ US-4: Validasi mutasi menolak jika nama pemilik baru identik dengan pemilik saat ini (0.09ms)
-✔ US-4: Eksekusi recordOwnershipTransfer memperbarui CurrentOwnerName dan menambahkan catatan mutasi ke riwayat (1.05ms)
-✔ US-5: Validasi penambahan berkas dokumen baru berhasil saat data lengkap (1.82ms)
-✔ US-5: Menolak penambahan dokumen jika jenis dokumen kosong (2.46ms)
-✔ US-5: Menolak penambahan dokumen jika nomor dokumen kosong (0.16ms)
-✔ US-5: Menolak duplikasi nomor dokumen pada bidang tanah yang sama (0.13ms)
-✔ US-5: Menolak penambahan dokumen jika format tanggal terbit tidak valid (0.20ms)
-✔ US-5: Melampirkan dokumen ke tanah kosong otomatis mengubah status dari INCOMPLETE menjadi NEEDS_REVIEW (0.20ms)
-✔ US-5: Melampirkan dokumen ke-3 otomatis meningkatkan status dari NEEDS_REVIEW menjadi COMPLETE (0.10ms)
-✔ US-5: Mencabut dokumen dapat menurunkan status kelengkapan secara otomatis (COMPLETE menjadi NEEDS_REVIEW) (0.12ms)
-✔ US-5: Kalkulasi metrik agregat dashboard menghitung jumlah total tanah dan per kategori status secara presisi (0.30ms)
-✔ US-5: Kalkulasi persentase kelengkapan dashboard (completeness rate) tepat (0.55ms)
+✔ Fitur 1 - Pencarian: Filter kombinasi teks pencarian dan jenis hak tanah (0.31ms)
+✔ Fitur 1 - Validasi: Lolos validasi saat data pendaftaran tanah lengkap dan benar (1.13ms)
+✔ Fitur 1 - Validasi: Menolak pendaftaran jika nomor sertifikat kosong (0.54ms)
+✔ Fitur 1 - Validasi: Menolak pendaftaran jika nomor sertifikat sudah ada (duplikat) (0.70ms)
+✔ Fitur 1 - Validasi: Menolak pendaftaran jika luas tanah <= 0 atau tidak valid (0.62ms)
+✔ Fitur 2 - Evaluasi: Menghasilkan status COMPLETE jika terdapat minimal 3 dokumen (3.27ms)
+✔ Fitur 2 - Evaluasi: Menghasilkan status NEEDS_REVIEW jika terdapat 1 atau 2 dokumen (0.49ms)
+✔ Fitur 2 - Evaluasi: Menghasilkan status INCOMPLETE jika belum ada dokumen yang dicatat (0.28ms)
+✔ Fitur 2 - Standar Lencana Warna: Status COMPLETE menggunakan label 'Lengkap' dan warna hijau (0.51ms)
+✔ Fitur 2 - Standar Lencana Warna: Status NEEDS_REVIEW menggunakan label 'Perlu Diperiksa' dan warna oranye (0.37ms)
+✔ Fitur 2 - Standar Lencana Warna: Status INCOMPLETE menggunakan label 'Belum Lengkap' dan warna merah (0.38ms)
+✔ Fitur 2 - Linimasa Riwayat: Mengurutkan silsilah perpindahan hak tanah secara kronologis (ascending) (0.49ms)
+✔ Fitur 2 - Linimasa Riwayat: Mengurutkan silsilah perpindahan hak tanah dari yang terbaru (descending) (2.34ms)
+✔ Fitur 2 - Metrik Dashboard: Menghitung akumulasi statistik ringkasan dan rasio kelengkapan (1.02ms)
+✔ Keamanan & Logging: Masking NIK 16 digit menyamarkan 8 digit tengah (3.56ms)
+✔ Keamanan & Logging: Masking nomor telepon format seluler 08xx (0.42ms)
+✔ Keamanan & Logging: Masking nomor telepon format internasional +62 (0.34ms)
+✔ Keamanan & Logging: Masking nomor telepon dengan pemisah spasi dan tanda minus (0.39ms)
+✔ Keamanan & Logging: Masking telepon lokal dengan kode area tanda kurung (0.38ms)
+✔ Keamanan & Logging: safeLog menghasilkan format terstruktur dengan timestamp dan level (5.32ms)
+✔ Keamanan & Penyimpanan: atomicWriteFileSync menulis data persisten tanpa corrupt (11.13ms)
+✔ US-1: Pendaftaran bidang tanah baru berhasil jika seluruh field wajib valid (1.95ms)
+✔ US-1: Menolak pendaftaran jika nomor sertifikat kosong (0.49ms)
+✔ US-1: Menolak pendaftaran jika nama pemilik kosong (0.29ms)
+✔ US-1: Menolak pendaftaran jika alamat bidang tanah kosong (0.24ms)
+✔ US-1: Menolak pendaftaran jika desa / kelurahan kosong (0.28ms)
+✔ US-1: Menolak pendaftaran jika kecamatan kosong (0.28ms)
+✔ US-1: Menolak pendaftaran jika luas tanah bernilai 0 (0.26ms)
+✔ US-1: Menolak pendaftaran jika luas tanah bernilai negatif (0.26ms)
+✔ US-1: Mencegah duplikasi nomor sertifikat yang sudah terdaftar dalam sistem (0.43ms)
+✔ US-2: Berhasil mencari berdasarkan nomor sertifikat secara parsial (2.15ms)
+✔ US-2: Berhasil mencari berdasarkan nama pemilik secara case-insensitive (0.34ms)
+✔ US-2: Berhasil mencari berdasarkan nama desa / kelurahan (0.25ms)
+✔ US-2: Berhasil mencari berdasarkan nama kecamatan (0.29ms)
+✔ US-2: Berhasil mencari berdasarkan nama kabupaten/kota (0.22ms)
+✔ US-2: Filter jenis hak tanah Hak Milik (SHM) secara eksklusif (0.25ms)
+✔ US-2: Filter jenis hak tanah Hak Guna Bangunan (HGB) (0.22ms)
+✔ US-2: Filter jenis hak tanah Girik / Adat (0.23ms)
+✔ US-2: Filter berdasarkan status kelengkapan dokumen COMPLETE (0.29ms)
+✔ US-2: Kueri yang tidak cocok menghasilkan array kosong tanpa runtime error (0.46ms)
+✔ US-3: Bidang tanah dengan 3 dokumen atau lebih dievaluasi sebagai COMPLETE (1.66ms)
+✔ US-3: Bidang tanah dengan 2 dokumen dievaluasi sebagai NEEDS_REVIEW (0.36ms)
+✔ US-3: Bidang tanah dengan 1 dokumen dievaluasi sebagai NEEDS_REVIEW (0.23ms)
+✔ US-3: Bidang tanah tanpa dokumen (0 berkas) dievaluasi sebagai INCOMPLETE (0.21ms)
+✔ US-3: Pemetaan lencana status COMPLETE menghasilkan label 'Lengkap' dan warna hijau (0.41ms)
+✔ US-3: Pemetaan lencana status NEEDS_REVIEW menggunakan label 'Perlu Diperiksa' dan warna oranye (0.25ms)
+✔ US-3: Pemetaan lencana status INCOMPLETE menggunakan label 'Belum Lengkap' dan warna merah (0.24ms)
+✔ US-3: Setiap status kelengkapan memiliki deskripsi penjelasan yang informatif (1.53ms)
+✔ US-4: Mengurutkan linimasa silsilah mutasi tanah secara kronologis (ascending: terlama ke terbaru) (1.89ms)
+✔ US-4: Mengurutkan linimasa silsilah mutasi tanah dari yang terbaru (descending: terbaru ke terlama) (0.32ms)
+✔ US-4: Menangani array linimasa riwayat yang kosong tanpa error (0.21ms)
+✔ US-4: Menangani entri riwayat dengan tanggal tidak valid secara aman tanpa melempar exception (0.42ms)
+✔ US-4: Data riwayat kepemilikan memelihara rantai transfer dari pemilik sebelumnya ke pemilik baru (0.25ms)
+✔ US-4: Validasi mutasi kepemilikan menolak jika nama pemilik baru kosong (0.52ms)
+✔ US-4: Validasi mutasi menolak jika nama pemilik baru identik dengan pemilik saat ini (0.32ms)
+✔ US-4: Eksekusi recordOwnershipTransfer memperbarui CurrentOwnerName dan menambahkan catatan mutasi ke riwayat (1.71ms)
+✔ US-5: Validasi penambahan berkas dokumen baru berhasil saat data lengkap (0.77ms)
+✔ US-5: Menolak penambahan dokumen jika jenis dokumen kosong (0.15ms)
+✔ US-5: Menolak penambahan dokumen jika nomor dokumen kosong (0.15ms)
+✔ US-5: Menolak duplikasi nomor dokumen pada bidang tanah yang sama (0.14ms)
+✔ US-5: Menolak penambahan dokumen jika format tanggal terbit tidak valid (0.10ms)
+✔ US-5: Melampirkan dokumen ke tanah kosong otomatis mengubah status dari INCOMPLETE menjadi NEEDS_REVIEW (0.17ms)
+✔ US-5: Melampirkan dokumen ke-3 otomatis meningkatkan status dari NEEDS_REVIEW menjadi COMPLETE (0.11ms)
+✔ US-5: Mencabut dokumen dapat menurunkan status kelengkapan secara otomatis (COMPLETE menjadi NEEDS_REVIEW) (0.11ms)
+✔ US-5: Kalkulasi metrik agregat dashboard menghitung jumlah total tanah dan per kategori status secara presisi (0.25ms)
+✔ US-5: Kalkulasi persentase kelengkapan dashboard (completeness rate) tepat (0.21ms)
 
 ========================================================================================
-RINGKASAN UJI: 63 Tests | 63 Passed | 0 Failed | 0 Skipped | Duration: ~304ms | STATUS: ALL PASSED
+RINGKASAN UJI: 70 Tests | 70 Passed | 0 Failed | 0 Skipped | Duration: ~445ms | STATUS: ALL PASSED
 ========================================================================================
 ```
 
 ---
 
 ## Kesimpulan Akhir
-Keempat poin pengujian, standar keamanan, logging aman dengan masking data pribadi (PII), penanganan error resilien, dan panduan deployment telah lengkap, terintegrasi pada repositori, dan terverifikasi 100% lulus uji.
+
+Hasil pengujian dan evaluasi teknis membuktikan bahwa:
+1. **Keamanan Lapisan Data**: Penyimpanan data persisten telah menerapkan pola atomik (*temporary file* + *atomic rename*) dengan penanganan status HTTP 500, dan sanitasi otomatis PII (*Personally Identifiable Information*) pada NIK serta berbagai format nomor telepon berjalan aktif.
+2. **Keandalan Logika Bisnis**: Seluruh 70 unit test lulus 100% tanpa kegagalan (mencakup 63 pengujian domain bisnis US-1 s/d US-5 & Feature 1-2, serta 7 pengujian keamanan dan logging).
+3. **Kompilasi & Build Bersih**: Pipeline `npm run build` berhasil mengompilasi tipe TypeScript pada `packages/shared` (`tsc --noEmit`), backend `apps/api` (`tsc`), dan mem-bundling frontend `apps/web` (`vite build`) tanpa error.
+4. **Transparansi Batasan**: Batasan ruang lingkup arsitektur prototipe MVP (belum adanya modul login/RBAC dan lingkungan live cloud hosting) telah didokumentasikan secara transparan sebagai prioritas backlog pengembangan fase berikutnya.

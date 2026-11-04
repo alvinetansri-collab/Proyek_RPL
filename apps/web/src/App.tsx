@@ -13,7 +13,8 @@ import {
   recordOwnershipTransfer,
 } from "@proyek-rpl/shared";
 
-const API_BASE = "http://localhost:5000/api";
+// Konfigurasi endpoint API Backend (mendukung dynamic cloud deployment via VITE_API_URL atau default localhost)
+const API_BASE = ((import.meta as any).env?.VITE_API_URL || "http://localhost:5000/api").replace(/\/$/, "");
 const STORAGE_KEY = "proyek_rpl_lands_data_final";
 
 export interface LandItem {

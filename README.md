@@ -1,7 +1,7 @@
 # Sistem Monitoring Dokumen dan Status Kepemilikan Tanah
 
-[![Unit Tests](https://img.shields.io/badge/Unit%20Tests-63%2F63%20PASSED-brightgreen.svg)](https://github.com/alvinetansri-collab/Proyek_RPL)
-[![Node.js Version](https://img.shields.io/badge/Node.js-%3E%3D18.0.0-blue.svg)](https://nodejs.org/)
+[![Unit Tests](https://img.shields.io/badge/Unit%20Tests-70%2F70%20PASSED-brightgreen.svg)](https://github.com/alvinetansri-collab/Proyek_RPL)
+[![Node.js Version](https://img.shields.io/badge/Node.js-%3E%3D22.6.0-blue.svg)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0%2B-blue.svg)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-18-61dafb.svg)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite-4.5-646cff.svg)](https://vitejs.dev/)
@@ -26,9 +26,9 @@ Video demonstrasi interaktif seluruh alur sistem monitoring tanah (MVP) tersedia
 5. [Panduan Instalasi Ulang (Fresh Clone Repo)](#panduan-instalasi-ulang-fresh-clone-repo)
 6. [Cara Menjalankan & Mengakses Aplikasi](#cara-menjalankan--mengakses-aplikasi)
 7. [Menjalankan Unit Test (Wajib All Passed)](#menjalankan-unit-test-wajib-all-passed)
-8. [Panduan Build & Deploy Production Preview](#panduan-build--deploy-production-preview)
+8. [Panduan Build & Deploy (Preview Lokal vs Hosting Remote)](#panduan-build--deploy-preview-lokal-vs-hosting-remote)
 9. [Dokumentasi REST API Endpoints](#dokumentasi-rest-api-endpoints)
-10. [Keamanan & Logging Aman](#keamanan--logging-aman)
+10. [Keamanan, Logging Aman, & Batasan MVP](#keamanan-logging-aman--batasan-mvp)
 
 ---
 
@@ -65,11 +65,11 @@ Aplikasi ini bukan untuk menentukan keabsahan hukum formal sertifikat, melainkan
 
 | User Story | Modul & Implementasi | Kriteria Penerimaan (Acceptance Criteria) |
 | :--- | :--- | :--- |
-| **US-1: Pendaftaran Bidang Tanah Baru** | `packages/shared/src/features/feature-1-search-registration/landSearch.ts` | Form input data fisik & legalitas tanah. Menolak jika field wajib kosong (*CertificateNumber, OwnerName, Address, Village, SubDistrict*). Luas tanah wajib $> 0\ \text{m}^2$. Mencegah duplikasi nomor sertifikat yang sudah terdaftar. |
-| **US-2: Pencarian Cerdas & Filter Multi-Kriteria** | `packages/shared/src/features/feature-1-search-registration/landSearch.ts` | Pencarian teks parsial & *case-insensitive* berdasarkan nomor sertifikat, nama pemilik, alamat, desa, kecamatan, kabupaten. Filter dropdown Jenis Hak (SHM, HGB, Girik/Adat) dan Filter Status Kelengkapan Dokumen. Tombol Reset Filter & penanganan data kosong. |
-| **US-3: Evaluasi Otomatis Kelengkapan Dokumen** | `packages/shared/src/features/feature-2-completeness-timeline/completenessEvaluator.ts` | Aturan bisnis berbasis kuantitas berkas: $\ge 3$ dokumen = `COMPLETE` (Lengkap - Hijau), $1-2$ dokumen = `NEEDS_REVIEW` (Perlu Diperiksa - Oranye), $0$ dokumen = `INCOMPLETE` (Belum Lengkap - Merah). Pemetaan lencana Tailwind dan deskripsi ramah pengguna. |
-| **US-4: Linimasa Silsilah Mutasi Kepemilikan** | `packages/shared/src/features/feature-2-completeness-timeline/completenessEvaluator.ts` | Linimasa silsilah kepemilikan dapat diurutkan secara kronologis terlama ke terbaru (Ascending) maupun mutasi terbaru (Descending). Form pencatatan mutasi hak baru (AJB, Waris, Hibah) yang otomatis memperbarui pemegang hak aktif saat ini. |
-| **US-5: Manajemen Berkas & Metrik Dashboard** | `packages/shared/src/features/feature-3-document-management/documentManager.ts` | Form pelampiran dokumen kepemilikan baru ke bidang tanah. Validasi format berkas & pencegahan nomor dokumen ganda pada satu tanah. Pencabutan dokumen yang otomatis menurunkan status kelengkapan. Kalkulasi metrik agregat dan rasio kelengkapan dashboard (%). |
+| **US-1: Pendaftaran Bidang Tanah Baru** | [`packages/shared/src/features/feature-1-search-registration/landSearch.ts`](./packages/shared/src/features/feature-1-search-registration/landSearch.ts) | Form input data fisik & legalitas tanah. Menolak jika field wajib kosong (*CertificateNumber, OwnerName, Address, Village, SubDistrict*). Luas tanah wajib $> 0\ \text{m}^2$. Mencegah duplikasi nomor sertifikat yang sudah terdaftar. |
+| **US-2: Pencarian Cerdas & Filter Multi-Kriteria** | [`packages/shared/src/features/feature-1-search-registration/landSearch.ts`](./packages/shared/src/features/feature-1-search-registration/landSearch.ts) | Pencarian teks parsial & *case-insensitive* berdasarkan nomor sertifikat, nama pemilik, alamat, desa, kecamatan, kabupaten. Filter dropdown Jenis Hak (SHM, HGB, Girik/Adat) dan Filter Status Kelengkapan Dokumen. Tombol Reset Filter & penanganan data kosong. |
+| **US-3: Evaluasi Otomatis Kelengkapan Dokumen** | [`packages/shared/src/features/feature-2-completeness-timeline/completenessEvaluator.ts`](./packages/shared/src/features/feature-2-completeness-timeline/completenessEvaluator.ts) | Aturan bisnis berbasis kuantitas berkas: $\ge 3$ dokumen = `COMPLETE` (Lengkap - Hijau), $1-2$ dokumen = `NEEDS_REVIEW` (Perlu Diperiksa - Oranye), $0$ dokumen = `INCOMPLETE` (Belum Lengkap - Merah). Pemetaan lencana Tailwind dan deskripsi ramah pengguna. |
+| **US-4: Linimasa Silsilah Mutasi Kepemilikan** | [`packages/shared/src/features/feature-2-completeness-timeline/completenessEvaluator.ts`](./packages/shared/src/features/feature-2-completeness-timeline/completenessEvaluator.ts) | Linimasa silsilah kepemilikan dapat diurutkan secara kronologis terlama ke terbaru (Ascending) maupun mutasi terbaru (Descending). Form pencatatan mutasi hak baru (AJB, Waris, Hibah) yang otomatis memperbarui pemegang hak aktif saat ini. |
+| **US-5: Manajemen Berkas & Metrik Dashboard** | [`packages/shared/src/features/feature-3-document-management/documentManager.ts`](./packages/shared/src/features/feature-3-document-management/documentManager.ts) | Form pelampiran dokumen kepemilikan baru ke bidang tanah. Validasi format berkas & pencegahan nomor dokumen ganda pada satu tanah. Pencabutan dokumen yang otomatis menurunkan status kelengkapan. Kalkulasi metrik agregat dan rasio kelengkapan dashboard (%). |
 
 ---
 
@@ -81,29 +81,34 @@ proyek-rpl/
 │   ├── web/                     # Frontend UI (React 18 + Vite + Tailwind CSS)
 │   │   ├── src/
 │   │   │   ├── App.tsx          # Antarmuka terintegrasi seluruh fitur US-1 s/d US-5
-│   │   │   └── main.tsx
+│   │   │   ├── main.tsx
+│   │   │   └── vite-env.d.ts    # Deklarasi tipe environment VITE_API_URL
+│   │   ├── .env.example         # Template konfigurasi URL Backend
 │   │   └── package.json
 │   └── api/                     # Backend REST API (Node.js + Express + Persistent JSON)
 │       ├── src/
-│       │   ├── index.ts         # REST API server, security logging, router endpoints
+│       │   ├── index.ts         # REST API server, CORS whitelist, router endpoints
+│       │   ├── security.ts      # Sanitasi PII masking & atomic file persistence
 │       │   └── logic.ts         # Validasi domain dan aturan bisnis server
 │       ├── data/
 │       │   └── lands.json       # Database persisten file JSON
 │       └── package.json
 ├── packages/
-│   └── shared/                  # Domain Models, Enums, & Core Business Logic
+│   └── shared/                  # Domain Models, Enums, Masking, & Core Business Logic
 │       ├── src/
 │       │   ├── enums/DocumentStatus.ts
 │       │   ├── models/LandPlot.ts, Document.ts, Owner.ts, OwnershipHistory.ts
+│       │   ├── security/masking.ts
 │       │   ├── features/
 │       │   │   ├── feature-1-search-registration/landSearch.ts
 │       │   │   ├── feature-2-completeness-timeline/completenessEvaluator.ts
 │       │   │   └── feature-3-document-management/documentManager.ts
 │       │   └── index.ts
 │       └── package.json
-├── tests/                       # 7 Folder Unit Test Suites (63 Tests - All Passed)
+├── tests/                       # 8 Folder Unit Test Suites (70 Tests - All Passed)
 │   ├── feature-1-search-registration/
 │   ├── feature-2-completeness-timeline/
+│   ├── security-audit/          # Uji PII masking, safe logging, dan atomisitas disk
 │   ├── us1-land-registration/
 │   ├── us2-land-search-filter/
 │   ├── us3-document-completeness/
@@ -112,7 +117,8 @@ proyek-rpl/
 ├── demo.mp4                     # Rekaman video demonstrasi MVP (52.8 MB)
 ├── checklist_mvp.md             # Matriks checklist fitur dan status pengujian
 ├── HowToRun.md                  # Panduan skenario demonstrasi interaktif
-├── SECURITY.md                  # Laporan uji keamanan, logging aman & troubleshooting
+├── SECURITY.md                  # Laporan uji keamanan, logging aman & batasan arsitektur
+├── laporan_pengujian.md         # Laporan evaluasi 4 poin resmi pengujian & deployment
 └── package.json                 # Skrip automasi workspace monorepo
 ```
 
@@ -123,8 +129,10 @@ proyek-rpl/
 Berikut adalah panduan langkah-demi-langkah melakukan instalasi dari awal (*fresh clone*) di komputer bersih:
 
 ### 1. Prasyarat Sistem
-- **Git**: Terpasang di perangkat.
-- **Node.js**: Versi `18.x`, `20.x`, atau `22.x/24.x` (LTS direkomendasikan).
+- **Git**: Versi 2.x atau lebih baru.
+- **Node.js**: **Versi `>= 22.6.0` (Rekomendasi: Node.js 22 LTS atau Node.js 24)**.  
+  > [!IMPORTANT]
+  > **Catatan Kompatibilitas Node.js**: Skrip `npm test` mengeksekusi `node --test tests/**/*.test.ts` langsung pada berkas TypeScript tanpa loader pihak ketiga (`ts-node` / `tsx`), menggunakan kapabilitas bawaan *Native TypeScript Type Stripping* yang diperkenalkan pada Node.js v22.6.0+. Jika Anda menggunakan Node.js 18 atau 20, runner pengujian memerlukan loader tambahan.
 - **npm**: Versi `9.x` atau lebih baru.
 
 ### 2. Kloning Repositori Bersih (Fresh Clone)
@@ -134,26 +142,39 @@ git clone https://github.com/alvinetansri-collab/Proyek_RPL.git
 cd Proyek_RPL
 ```
 
-### 3. Instalasi Dependensi Monorepo
+### 3. Pembuatan Cabang & Verifikasi Pull Request (Opsional)
+Untuk menguji dalam cabang terisolasi atau mengajukan Pull Request:
+```bash
+git checkout -b test/verify-fresh-clone
+```
+*Tautan Compare / Pull Request di GitHub:*  
+👉 [https://github.com/alvinetansri-collab/Proyek_RPL/compare/main...test/verify-fresh-clone](https://github.com/alvinetansri-collab/Proyek_RPL/compare/main...test/verify-fresh-clone)
+
+### 4. Instalasi Dependensi Monorepo
 Jalankan instalasi paket di root proyek:
 ```bash
 npm install
 ```
 *(Catatan Windows: Jika eksekusi script dibatasi oleh execution policy, gunakan `npm.cmd install`)*
 
-### 4. Kompilasi Build Seluruh Modul
-Kompilasi paket `@proyek-rpl/shared`, `apps/api`, dan `apps/web`:
+### 5. Kompilasi Build Seluruh Modul
+Kompilasi paket monorepo:
 ```bash
 npm run build
 ```
+Rincian proses kompilasi:
+- `packages/shared`: Mengeksekusi `tsc --noEmit` untuk memvalidasi tipe TypeScript seluruh modul tanpa menghasilkan folder `dist/` (karena modul ini dikonsumsi langsung oleh workspace).
+- `apps/api`: Mengompilasi TypeScript ke artefak CommonJS di folder `apps/api/dist/`.
+- `apps/web`: Mengompilasi TypeScript dan mem-bundling aset web Vite teroptimasi ke folder `apps/web/dist/`.
+
 Pastikan seluruh paket berhasil dikompilasi tanpa error (`exit code 0`).
 
-### 5. Jalankan Pengujian Unit Test
-Verifikasi keandalan kode dengan menjalankan 63 unit test:
+### 6. Jalankan Pengujian Unit Test
+Verifikasi keandalan kode dengan menjalankan 70 unit test:
 ```bash
 npm test
 ```
-Seluruh 63 pengujian wajib berstatus **All Passed (0 failed)**.
+Seluruh 70 pengujian wajib berstatus **All Passed (0 failed, 0 skipped)**.
 
 ---
 
@@ -175,23 +196,23 @@ npm run dev:api
 npm run dev:web
 ```
 *Buka browser Anda dan akses: **`http://localhost:3000/`**.*  
-Indikator di pojok kanan atas header akan menampilkan badge hijau menyala: **"Backend API Terhubung (Port 5000)"**.
+Indikator di pojok kanan atas header akan menampilkan badge hijau: **"Backend API Terhubung (Port 5000)"**.
 
 ### Opsi B: Menjalankan Mode Standalone Frontend (Penyimpanan Lokal Aktif)
 Jika tidak ingin menyalakan backend API:
 ```bash
 npm run dev:web
 ```
-Akses `http://localhost:3000/`. Aplikasi secara cerdas beralih ke **Mode Standalone (Penyimpanan Lokal Aktif via LocalStorage)**. Semua fitur tambah tanah, lampir dokumen, mutasi hak, dan pencarian tetap berjalan 100% lancar dan tersimpan di browser.
+Akses `http://localhost:3000/`. Aplikasi secara otomatis beralih ke **Mode Standalone (Penyimpanan Lokal Aktif via LocalStorage)**. Semua fitur tambah tanah, lampir dokumen, mutasi hak, dan pencarian tetap berjalan normal dan tersimpan di browser.
 
 ---
 
 ## Menjalankan Unit Test (Wajib All Passed)
 
-Pengujian dibangun menggunakan *native test runner* Node.js tanpa dependensi pihak ketiga yang berat:
+Pengujian dibangun menggunakan *native test runner* bawaan Node.js:
 
 ```bash
-# Menjalankan seluruh 63 unit test (7 test suites)
+# Menjalankan seluruh 70 unit test (8 test suites)
 npm test
 
 # Menjalankan spesifik per-user story
@@ -206,40 +227,67 @@ npm run test:feat1   # Fitur 1 asli
 npm run test:feat2   # Fitur 2 asli
 ```
 
-**Hasil Pengujian:**
+**Hasil Pengujian Terverifikasi:**
 ```text
-ℹ tests 63
+ℹ tests 70
 ℹ suites 0
-ℹ pass 63
+ℹ pass 70
 ℹ fail 0
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms ~300ms
+ℹ duration_ms ~445ms
 ```
 
 ---
 
-## Panduan Build & Deploy Production Preview
+## Panduan Build & Deploy (Preview Lokal vs Hosting Remote)
 
-Untuk menguji build versi produksi (*production bundle*) sebelum dideploy ke server hosting:
+Repositori ini membedakan secara transparan antara pengujian build lokal (*Local Production Preview*) dan panduan deployment ke hosting jarak jauh (*Remote Cloud Deployment*):
 
-1. **Build Monorepo untuk Produksi:**
+### 1. Local Production Preview (Simulasi Lingkungan Produksi Lokal)
+Digunakan untuk memvalidasi bundle hasil build sebelum di-deploy ke server:
+1. **Build Monorepo:**
    ```bash
    npm run build
    ```
-
-2. **Jalankan Server Production API:**
+2. **Jalankan Server API Produksi:**
    ```bash
    npm run start:api
    ```
    *Menjalankan bundle `apps/api/dist/index.js` di port 5000.*
-
-3. **Jalankan Production Preview Frontend:**
+3. **Jalankan Vite Preview Frontend:**
    ```bash
    npm run preview:web
    ```
-   *Vite preview akan melayani file teroptimasi di `apps/web/dist` pada `http://localhost:4173` atau `http://localhost:3000`.*
+   *Vite preview melayani file teroptimasi di `apps/web/dist` pada `http://localhost:4173`.*
+
+---
+
+### 2. Panduan Remote Cloud Deployment
+
+Jika Anda ingin mendeploy sistem ke server hosting publik (Vercel, Netlify, Docker, atau VPS):
+
+#### A. Konfigurasi Endpoint Backend Dinamis:
+Frontend tidak meng-hardcode alamat server. Sebelum melakukan build frontend, tentukan URL Backend melalui file `.env` di direktori `apps/web`:
+```bash
+# Contoh pada apps/web/.env (lihat apps/web/.env.example)
+VITE_API_URL=https://api-landtracker.domain-anda.com/api
+```
+Saat dijalankan di hosting publik, browser pengguna akan menghubungi endpoint API remote tersebut.
+
+#### B. Deployment Backend (Node.js Container / VPS / Railway):
+1. Pastikan port `5000` (atau `PORT` dari environment) dibuka.
+2. Tentukan domain frontend yang diizinkan pada variabel lingkungan `CORS_ORIGIN`:
+   ```bash
+   CORS_ORIGIN=https://landtracker.domain-anda.com
+   ```
+3. Jalankan server melalui `npm run start:api`.
+
+#### C. Deployment Frontend (Vercel / Netlify / Nginx):
+1. Jalankan build: `npm run build:web`.
+2. Arahkan direktori publik / publish directory ke folder **`apps/web/dist`**.
+3. Pastikan rewrite SPA aktif (`/* -> /index.html`).
 
 ---
 
@@ -251,24 +299,30 @@ Server Backend API Express beroperasi di `http://localhost:5000`:
 | :--- | :--- | :--- | :---: |
 | `GET` | `/api/health` | Health check status server, storage mode, dan jumlah data | `200 OK` |
 | `GET` | `/api/lands` | Mengambil data tanah dengan filter query `search`, `rightType`, `completenessStatus` | `200 OK` |
-| `POST` | `/api/lands` | Mendaftarkan bidang tanah baru dengan validasi field & sertifikat unik | `201 Created` / `400 Bad Request` |
+| `POST` | `/api/lands` | Mendaftarkan bidang tanah baru dengan validasi field & sertifikat unik | `201 Created` / `400 Bad Request` / `500 Error` |
 | `GET` | `/api/lands/:id/detail` | Mengambil detail lengkap satu bidang tanah beserta dokumen dan linimasa | `200 OK` / `404 Not Found` |
-| `POST` | `/api/lands/:id/documents` | Melampirkan berkas dokumen baru & re-evaluasi status otomatis | `201 Created` / `400 Bad Request` |
-| `DELETE` | `/api/lands/:id/documents/:docId` | Mencabut berkas dokumen & re-evaluasi status otomatis | `200 OK` / `404 Not Found` |
-| `POST` | `/api/lands/:id/histories` | Mencatat mutasi kepemilikan tanah & memperbarui pemilik aktif | `201 Created` / `400 Bad Request` |
-| `DELETE` | `/api/lands/:id` | Menghapus bidang tanah dari sistem secara permanen | `200 OK` / `404 Not Found` |
+| `POST` | `/api/lands/:id/documents` | Melampirkan berkas dokumen baru & re-evaluasi status otomatis | `201 Created` / `400 Bad Request` / `500 Error` |
+| `DELETE` | `/api/lands/:id/documents/:docId` | Mencabut berkas dokumen & re-evaluasi status otomatis | `200 OK` / `404 Not Found` / `500 Error` |
+| `POST` | `/api/lands/:id/histories` | Mencatat mutasi kepemilikan tanah & memperbarui pemilik aktif | `201 Created` / `400 Bad Request` / `500 Error` |
+| `DELETE` | `/api/lands/:id` | Menghapus bidang tanah dari sistem secara permanen | `200 OK` / `404 Not Found` / `500 Error` |
+| `POST` | `/api/reset-demo` | Mengembalikan database disk ke data mock demo awal | `200 OK` / `500 Error` |
 
 ---
 
-## Keamanan & Logging Aman
+## Keamanan, Logging Aman, & Batasan MVP
 
-Untuk rincian lengkap mengenai hasil uji keamanan, sanitasi PII (*Personally Identifiable Information*), serta studi kasus penanganan error, silakan membaca dokumen:
-👉 **[`SECURITY.md`](./SECURITY.md)**
+Untuk rincian lengkap mengenai hasil audit keamanan, format log tersanitasi, serta analisis perbaikan error, silakan membaca dokumen:
+👉 **[`SECURITY.md`](./SECURITY.md)** dan **[`laporan_pengujian.md`](./laporan_pengujian.md)**
 
-### Ringkasan Praktik Keamanan:
-1. **Audit Dependensi**: Dependensi telah diaudit (`npm audit`), kerentanan High pada `body-parser` dan `qs` telah diperbaiki.
-2. **Perlindungan Data Sensitif (PII Masking)**: NIK (16 digit) dan nomor telepon secara otomatis disamarkan dalam log audit:
+### Ringkasan Praktik Keamanan & Transparansi Batasan:
+1. **Audit Dependensi**: Dependensi runtime produksi (`body-parser`, `qs`, `express`) bersih dari kerentanan tingkat HIGH (berdasarkan audit commit `69f04e5`).
+2. **Perlindungan Data Sensitif (PII Masking)**: NIK (16 digit) dan berbagai format nomor telepon (`08xx`, `+62xx`, `(021)xx`, pemisah spasi/strip) secara otomatis disamarkan dalam log audit:
    - NIK Asli: `3271012345670001` $\rightarrow$ Log: `3271********0001`
    - Telepon Asli: `081234567890` $\rightarrow$ Log: `0812****90`
-3. **Pencegahan Kebocoran Stack Trace**: Respons error ke pengguna hanya mengembalikan pesan yang aman dan ramah pengguna tanpa membocorkan struktur internal server atau database.
-4. **Validasi Anti-Duplikasi & Input**: Seluruh input divalidasi ganda (*defense-in-depth*) baik di sisi client maupun server.
+   - Telepon Internasional: `+62 812-3456-7890` $\rightarrow$ Log: `+62812****90`
+3. **Penyimpanan Atomik & Penanganan Error**: Penyimpanan ke berkas disk menggunakan berkas sementara lalu `renameSync` untuk mencegah korupsi data. Jika operasi disk gagal, server me-rollback state dan mengembalikan status HTTP 500.
+4. **CORS Origin Whitelist**: Menggunakan pembatasan origin eksplisit (`localhost:3000`, `localhost:4173`, `localhost:5173`) dengan fallback konfigurasi `process.env.CORS_ORIGIN`.
+5. **Batasan Arsitektural MVP**:
+   - Sistem saat ini merupakan prototipe MVP tanpa modul autentikasi (login/session/JWT) dan tanpa Role-Based Access Control (RBAC).
+   - Seluruh endpoint mutasi terbuka untuk kebutuhan pengujian demo lokal.
+   - Pembedaan peran (SuperAdmin, BPN Verifikator, Notaris) dan enkripsi at-rest tercatat sebagai backlog pengembangan tahap lanjut.

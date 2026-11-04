@@ -9,34 +9,41 @@ import {
   validateDocumentAttachment,
   validateOwnershipTransfer,
 } from "./logic";
+import { maskPII, safeLog, atomicWriteFileSync } from "./security";
+
+export { maskPII, safeLog, atomicWriteFileSync };
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.use(cors());
+// Konfigurasi CORS dengan Whitelist Origin Eksplisit
+const defaultAllowedOrigins = [
+  "http://localhost:3000",
+  "http://127.0.0.1:3000",
+  "http://localhost:4173",
+  "http://127.0.0.1:4173",
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+];
+const allowedOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(",").map((s) => s.trim())
+  : defaultAllowedOrigins;
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Izinkan request tanpa origin (seperti curl, mobile app, postman, atau server-to-server)
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error(`CORS Policy: Origin ${origin} tidak diizinkan oleh whitelist`));
+    },
+    methods: ["GET", "POST", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+  })
+);
 app.use(express.json());
-
-// Sanitasi & Masking PII untuk Logging Aman (Security Logging)
-export function maskPII(text: string): string {
-  if (!text) return text;
-  return text
-    .replace(/\b(\d{4})\d{8}(\d{4})\b/g, "$1********$2")
-    .replace(/\b(08\d{2})\d{3,6}(\d{2})\b/g, "$1****$2");
-}
-
-export function safeLog(level: "INFO" | "WARN" | "ERROR" | "AUDIT", message: string, meta?: any): void {
-  const timestamp = new Date().toISOString();
-  let sanitizedMeta = "";
-  if (meta) {
-    try {
-      const raw = typeof meta === "string" ? meta : JSON.stringify(meta);
-      sanitizedMeta = " | " + maskPII(raw);
-    } catch {
-      sanitizedMeta = " | [Metadata omitted]";
-    }
-  }
-  console.log(`[${timestamp}] [${level}] ${maskPII(message)}${sanitizedMeta}`);
-}
 
 // Request logger middleware aman
 app.use((req, _res, next) => {
@@ -226,27 +233,21 @@ function loadLandsFromDisk(): LandRecord[] {
       fs.mkdirSync(dataDir, { recursive: true });
     }
     if (!fs.existsSync(dataFilePath)) {
-      fs.writeFileSync(dataFilePath, JSON.stringify(defaultMockLands, null, 2), "utf-8");
+      atomicWriteFileSync(dataFilePath, JSON.stringify(defaultMockLands, null, 2));
       return defaultMockLands;
     }
     const raw = fs.readFileSync(dataFilePath, "utf-8");
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed : defaultMockLands;
   } catch (err) {
-    console.error("[API Storage] Error membaca file data, fallback ke default mock:", err);
+    safeLog("ERROR", "Error membaca file data dari disk, fallback ke default mock", err instanceof Error ? err.message : String(err));
     return defaultMockLands;
   }
 }
 
-function saveLandsToDisk(lands: LandRecord[]): void {
-  try {
-    if (!fs.existsSync(dataDir)) {
-      fs.mkdirSync(dataDir, { recursive: true });
-    }
-    fs.writeFileSync(dataFilePath, JSON.stringify(lands, null, 2), "utf-8");
-  } catch (err) {
-    console.error("[API Storage] Gagal menyimpan data ke disk:", err);
-  }
+// Penyimpanan data ke disk dengan mekanisme atomik (temp file + renameSync) untuk mencegah data corruption
+export function saveLandsToDisk(lands: LandRecord[]): boolean {
+  return atomicWriteFileSync(dataFilePath, JSON.stringify(lands, null, 2));
 }
 
 let landsStore: LandRecord[] = loadLandsFromDisk();
@@ -328,6 +329,10 @@ app.post("/api/lands", (req, res) => {
     );
 
     if (!validation.isValid) {
+      safeLog("WARN", `Validasi pendaftaran tanah gagal: ${validation.errors.join("; ")}`, {
+        certificateNumber: CertificateNumber,
+        ownerName: CurrentOwnerName,
+      });
       return res.status(400).json({
         error: "Validasi gagal",
         details: validation.errors,
@@ -369,8 +374,19 @@ app.post("/api/lands", (req, res) => {
     };
 
     landsStore = [newLand, ...landsStore];
-    saveLandsToDisk(landsStore);
-    safeLog("AUDIT", `Pendaftaran tanah baru: ${newLand.CertificateNumber} (Pemilik: ${newLand.CurrentOwnerName}, Luas: ${newLand.LandArea} m²)`);
+    const saved = saveLandsToDisk(landsStore);
+    if (!saved) {
+      landsStore = landsStore.slice(1);
+      return res.status(500).json({ error: "Gagal menyimpan data pendaftaran tanah ke penyimpanan disk" });
+    }
+    safeLog(
+      "AUDIT",
+      `Pendaftaran tanah baru: ${newLand.CertificateNumber} (Pemilik: ${newLand.CurrentOwnerName}, Luas: ${newLand.LandArea} m²)`,
+      {
+        nik: newLand.owners?.[0]?.nationalId,
+        phone: newLand.owners?.[0]?.phoneNumber,
+      }
+    );
 
     res.status(201).json(newLand);
   } catch (error) {
@@ -411,6 +427,10 @@ app.post("/api/lands/:id/documents", (req, res) => {
     );
 
     if (!validation.isValid) {
+      safeLog("WARN", `Validasi lampiran dokumen gagal pada tanah ID ${id}: ${validation.errors.join("; ")}`, {
+        documentType,
+        documentNumber,
+      });
       return res.status(400).json({
         error: "Validasi dokumen gagal",
         details: validation.errors,
@@ -434,7 +454,11 @@ app.post("/api/lands/:id/documents", (req, res) => {
     };
 
     landsStore[landIndex] = updatedLand;
-    saveLandsToDisk(landsStore);
+    const saved = saveLandsToDisk(landsStore);
+    if (!saved) {
+      landsStore[landIndex] = land; // rollback
+      return res.status(500).json({ error: "Gagal menyimpan berkas dokumen ke penyimpanan disk" });
+    }
     safeLog("AUDIT", `Dokumen terlampir pada ${land.CertificateNumber}: ${createdDoc.documentType} (${createdDoc.documentNumber}) - Status baru: ${newStatus}`);
 
     res.status(201).json({
@@ -468,7 +492,11 @@ app.delete("/api/lands/:id/documents/:docId", (req, res) => {
     };
 
     landsStore[landIndex] = updatedLand;
-    saveLandsToDisk(landsStore);
+    const saved = saveLandsToDisk(landsStore);
+    if (!saved) {
+      landsStore[landIndex] = land; // rollback
+      return res.status(500).json({ error: "Gagal memperbarui pencabutan dokumen pada penyimpanan disk" });
+    }
     safeLog("AUDIT", `Dokumen ID ${docId} dicabut dari ${land.CertificateNumber} - Status baru: ${newStatus}`);
 
     res.json({
@@ -500,6 +528,10 @@ app.post("/api/lands/:id/histories", (req, res) => {
     );
 
     if (!validation.isValid) {
+      safeLog("WARN", `Validasi mutasi kepemilikan gagal pada tanah ID ${id}: ${validation.errors.join("; ")}`, {
+        newOwnerName,
+        transferType,
+      });
       return res.status(400).json({
         error: "Validasi mutasi gagal",
         details: validation.errors,
@@ -532,7 +564,11 @@ app.post("/api/lands/:id/histories", (req, res) => {
     };
 
     landsStore[landIndex] = updatedLand;
-    saveLandsToDisk(landsStore);
+    const saved = saveLandsToDisk(landsStore);
+    if (!saved) {
+      landsStore[landIndex] = land; // rollback
+      return res.status(500).json({ error: "Gagal menyimpan data mutasi ke penyimpanan disk" });
+    }
     safeLog("AUDIT", `Mutasi hak tanah ${land.CertificateNumber}: dari ${previousOwner} ke ${newOwnerName} (${transferType})`);
 
     res.status(201).json({
@@ -556,7 +592,11 @@ app.delete("/api/lands/:id", (req, res) => {
     }
 
     const deleted = landsStore.splice(landIndex, 1)[0];
-    saveLandsToDisk(landsStore);
+    const saved = saveLandsToDisk(landsStore);
+    if (!saved) {
+      landsStore.splice(landIndex, 0, deleted); // rollback
+      return res.status(500).json({ error: "Gagal menghapus bidang tanah dari penyimpanan disk" });
+    }
     safeLog("AUDIT", `Bidang tanah dihapus: ${deleted.CertificateNumber} (Pemilik: ${deleted.CurrentOwnerName})`);
 
     res.json({
@@ -572,23 +612,34 @@ app.delete("/api/lands/:id", (req, res) => {
 // 9. POST /api/reset-demo (Kembalikan ke data awal demo)
 app.post("/api/reset-demo", (_req, res) => {
   try {
+    const backup = [...landsStore];
     landsStore = JSON.parse(JSON.stringify(defaultMockLands));
-    saveLandsToDisk(landsStore);
+    const saved = saveLandsToDisk(landsStore);
+    if (!saved) {
+      landsStore = backup; // rollback
+      return res.status(500).json({ error: "Gagal mereset data demo pada disk" });
+    }
+    safeLog("AUDIT", `Reset data demo dijalankan: ${landsStore.length} bidang tanah dipulihkan`);
     res.json({
       message: "Data demo berhasil direset ke konfigurasi awal",
       total: landsStore.length,
       lands: landsStore,
     });
   } catch (error) {
+    safeLog("ERROR", `Gagal mereset data demo`, error instanceof Error ? error.message : undefined);
     res.status(500).json({ error: "Gagal mereset data demo" });
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`====================================================`);
-  console.log(`Server Backend API Proyek RPL Berjalan di Port ${PORT}`);
-  console.log(`Mode Penyimpanan: Persistent JSON Storage (${dataFilePath})`);
-  console.log(`Jumlah Data Terdaftar: ${landsStore.length} bidang tanah`);
-  console.log(`Endpoint Health Check: http://localhost:${PORT}/api/health`);
-  console.log(`====================================================`);
-});
+if (process.env.NODE_ENV !== "test") {
+  app.listen(PORT, () => {
+    console.log(`====================================================`);
+    console.log(`Server Backend API Proyek RPL Berjalan di Port ${PORT}`);
+    console.log(`Mode Penyimpanan: Persistent JSON Storage (${dataFilePath})`);
+    console.log(`Jumlah Data Terdaftar: ${landsStore.length} bidang tanah`);
+    console.log(`Endpoint Health Check: http://localhost:${PORT}/api/health`);
+    console.log(`====================================================`);
+  });
+}
+
+export default app;
