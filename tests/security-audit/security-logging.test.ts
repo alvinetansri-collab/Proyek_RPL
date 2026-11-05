@@ -4,7 +4,7 @@ import fs from "fs";
 import path from "path";
 import os from "os";
 import { maskPII } from "../../packages/shared/src/security/masking.ts";
-import { safeLog, atomicWriteFileSync } from "../../apps/api/src/security.ts";
+import { safeLog, sanitizeLogText, atomicWriteFileSync } from "../../apps/api/src/security.ts";
 
 test("Keamanan & Logging: Masking NIK 16 digit menyamarkan 8 digit tengah", () => {
   const nik = "3201123456780001";
@@ -34,11 +34,40 @@ test("Keamanan & Logging: Masking nomor telepon dengan pemisah spasi dan tanda m
   assert.strictEqual(masked.includes("+62812****90"), true);
 });
 
-test("Keamanan & Logging: Masking telepon lokal dengan kode area tanda kurung", () => {
+test("Keamanan & Logging: Masking telepon lokal PSTN format 021-87901234", () => {
+  const phone = "021-87901234";
+  const masked = maskPII(`Telepon kantor: ${phone}`);
+  assert.strictEqual(masked.includes("8790"), false);
+  assert.strictEqual(masked.includes("021****34"), true);
+});
+
+test("Keamanan & Logging: Masking telepon lokal PSTN format 0251-8321234 (Bogor)", () => {
+  const phone = "0251-8321234";
+  const masked = maskPII(`Kantor BPN Bogor: ${phone}`);
+  assert.strictEqual(masked.includes("8321"), false);
+  assert.strictEqual(masked.includes("0251****34"), true);
+});
+
+test("Keamanan & Logging: Masking telepon lokal dengan kode area tanda kurung (021)", () => {
   const phone = "(021) 1234567";
   const masked = maskPII(`Kantor: ${phone}`);
   assert.strictEqual(masked.includes("1234"), false);
-  assert.strictEqual(masked.includes("(021)****567"), true);
+  assert.strictEqual(masked.includes("(021)****67"), true);
+});
+
+test("Keamanan & Logging: safeLog menyamarkan path direktori sistem internal", () => {
+  const sensitivePath = "C:\\Users\\hp5cd\\Documents\\proyek rpl\\apps\\api\\data\\lands.json";
+  const output = safeLog("ERROR", `Gagal membaca file dari ${sensitivePath}`);
+  assert.strictEqual(output.includes("hp5cd"), false);
+  assert.strictEqual(output.includes("[INTERNAL_PATH]"), true);
+});
+
+test("Keamanan & Logging: safeLog mencegah CRLF Log Injection (CWE-117)", () => {
+  const maliciousInput = "Pendaftaran tanah baru\r\n[2026-11-05T00:00:00Z] [AUDIT] Injected Admin Access Granted";
+  const output = safeLog("INFO", maliciousInput);
+  assert.strictEqual(output.includes("\r"), false);
+  assert.strictEqual(output.includes("\n"), false);
+  assert.strictEqual(output.includes("Pendaftaran tanah baru [2026-11-05T00:00:00Z]"), true);
 });
 
 test("Keamanan & Logging: safeLog menghasilkan format terstruktur dengan timestamp dan level", () => {

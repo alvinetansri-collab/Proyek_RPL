@@ -631,6 +631,39 @@ app.post("/api/reset-demo", (_req, res) => {
   }
 });
 
+// 10. Middleware Penanganan Error Terpusat (Centralized Error Handler)
+// Menjamin penolakan CORS, SyntaxError JSON parser, dan unhandled exception mendapat respons JSON tersanitasi
+app.use((err: any, req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  const isCorsError = err && typeof err.message === "string" && err.message.startsWith("CORS Policy:");
+  const isJsonSyntaxError = err instanceof SyntaxError && "body" in err;
+
+  if (isCorsError) {
+    safeLog("WARN", `Permintaan CORS ditolak: ${err.message}`, {
+      origin: req.headers.origin || "Unknown Origin",
+      path: req.path,
+    });
+    return res.status(403).json({
+      error: "Akses ditolak oleh kebijakan CORS",
+      message: "Origin permintaan Anda tidak diizinkan mengakses layanan API ini.",
+    });
+  }
+
+  if (isJsonSyntaxError) {
+    safeLog("WARN", `Payload JSON tidak valid pada ${req.method} ${req.path}`, { ip: req.ip });
+    return res.status(400).json({
+      error: "Format JSON payload tidak valid",
+      message: "Sintaksis body permintaan tidak dapat diparsing sebagai JSON yang valid.",
+    });
+  }
+
+  // Generic internal server error tersanitasi tanpa membocorkan stack trace atau path
+  safeLog("ERROR", `Unhandled exception pada ${req.method} ${req.path}`, err instanceof Error ? err.message : undefined);
+  return res.status(500).json({
+    error: "Internal Server Error",
+    message: "Terjadi kesalahan internal pada pemrosesan server. Silakan coba beberapa saat lagi.",
+  });
+});
+
 if (process.env.NODE_ENV !== "test") {
   app.listen(PORT, () => {
     console.log(`====================================================`);
