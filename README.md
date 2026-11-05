@@ -1,7 +1,8 @@
 # Sistem Monitoring Dokumen dan Status Kepemilikan Tanah
 
-[![Unit Tests](https://img.shields.io/badge/Unit%20Tests-70%2F70%20PASSED-brightgreen.svg)](https://github.com/alvinetansri-collab/Proyek_RPL)
-[![Node.js Version](https://img.shields.io/badge/Node.js-%3E%3D22.6.0-blue.svg)](https://nodejs.org/)
+[![Unit Tests](https://img.shields.io/badge/Unit%20Tests-74%2F74%20PASSED-brightgreen.svg)](https://github.com/alvinetansri-collab/Proyek_RPL)
+[![Pull Request](https://img.shields.io/badge/Pull%20Request-%231%20OPEN-brightgreen.svg)](https://github.com/alvinetansri-collab/Proyek_RPL/pull/1)
+[![Node.js Version](https://img.shields.io/badge/Node.js-%3E%3D22.18.0-blue.svg)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0%2B-blue.svg)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-18-61dafb.svg)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite-4.5-646cff.svg)](https://vitejs.dev/)
@@ -105,7 +106,7 @@ proyek-rpl/
 │       │   │   └── feature-3-document-management/documentManager.ts
 │       │   └── index.ts
 │       └── package.json
-├── tests/                       # 8 Folder Unit Test Suites (70 Tests - All Passed)
+├── tests/                       # 8 Folder Unit Test Suites (74 Tests - All Passed)
 │   ├── feature-1-search-registration/
 │   ├── feature-2-completeness-timeline/
 │   ├── security-audit/          # Uji PII masking, safe logging, dan atomisitas disk
@@ -130,9 +131,9 @@ Berikut adalah panduan langkah-demi-langkah melakukan instalasi dari awal (*fres
 
 ### 1. Prasyarat Sistem
 - **Git**: Versi 2.x atau lebih baru.
-- **Node.js**: **Versi `>= 22.6.0` (Rekomendasi: Node.js 22 LTS atau Node.js 24)**.  
+- **Node.js**: **Versi `>= 22.18.0` (Rekomendasi: Node.js 22 LTS seperti v22.18.0+ atau Node.js 24)**.  
   > [!IMPORTANT]
-  > **Catatan Kompatibilitas Node.js**: Skrip `npm test` mengeksekusi `node --test tests/**/*.test.ts` langsung pada berkas TypeScript tanpa loader pihak ketiga (`ts-node` / `tsx`), menggunakan kapabilitas bawaan *Native TypeScript Type Stripping* yang diperkenalkan pada Node.js v22.6.0+. Jika Anda menggunakan Node.js 18 atau 20, runner pengujian memerlukan loader tambahan.
+  > **Catatan Kompatibilitas Node.js**: Skrip `npm test` mengeksekusi `node --test tests/**/*.test.ts` langsung pada berkas TypeScript tanpa loader pihak ketiga (`ts-node` / `tsx`), menggunakan kapabilitas bawaan *Native TypeScript Type Stripping* tanpa flag tambahan (`unflagged`). Pada lini Node.js 22, fitur tanpa flag ini secara resmi didukung mulai versi **v22.18.0+** (pada v22.6.0 - v22.17.0 masih memerlukan flag `--experimental-strip-types`), serta telah aktif secara default pada Node.js 24+. Jika Anda menggunakan Node.js 18 atau 20, runner pengujian memerlukan loader pihak ketiga.
 - **npm**: Versi `9.x` atau lebih baru.
 
 ### 2. Kloning Repositori Bersih (Fresh Clone)
@@ -142,13 +143,14 @@ git clone https://github.com/alvinetansri-collab/Proyek_RPL.git
 cd Proyek_RPL
 ```
 
-### 3. Pembuatan Cabang & Verifikasi Pull Request (Opsional)
-Untuk menguji dalam cabang terisolasi atau mengajukan Pull Request:
+### 3. Pembuatan Cabang & Verifikasi Pull Request Aktual
+Untuk menguji dalam cabang terisolasi atau memeriksa Pull Request resmi:
 ```bash
 git checkout -b test/verify-fresh-clone
 ```
-*Tautan Compare / Pull Request di GitHub:*  
-👉 [https://github.com/alvinetansri-collab/Proyek_RPL/compare/main...test/verify-fresh-clone](https://github.com/alvinetansri-collab/Proyek_RPL/compare/main...test/verify-fresh-clone)
+*Tautan Pull Request Resmi & Terverifikasi di GitHub:*  
+👉 **[Pull Request #1: test/verify-fresh-clone into main](https://github.com/alvinetansri-collab/Proyek_RPL/pull/1)**  
+*(Status: Terbuka/Open, lolos seluruh pengujian unit test dan kompilasi build)*
 
 ### 4. Instalasi Dependensi Monorepo
 Jalankan instalasi paket di root proyek:
@@ -170,11 +172,11 @@ Rincian proses kompilasi:
 Pastikan seluruh paket berhasil dikompilasi tanpa error (`exit code 0`).
 
 ### 6. Jalankan Pengujian Unit Test
-Verifikasi keandalan kode dengan menjalankan 70 unit test:
+Verifikasi keandalan kode dengan menjalankan 74 unit test:
 ```bash
 npm test
 ```
-Seluruh 70 pengujian wajib berstatus **All Passed (0 failed, 0 skipped)**.
+Seluruh 74 pengujian wajib berstatus **All Passed (0 failed, 0 skipped)**.
 
 ---
 
@@ -212,7 +214,7 @@ Akses `http://localhost:3000/`. Aplikasi secara otomatis beralih ke **Mode Stand
 Pengujian dibangun menggunakan *native test runner* bawaan Node.js:
 
 ```bash
-# Menjalankan seluruh 70 unit test (8 test suites)
+# Menjalankan seluruh 74 unit test (8 test suites)
 npm test
 
 # Menjalankan spesifik per-user story
@@ -222,21 +224,21 @@ npm run test:us3     # Evaluasi status kelengkapan dokumen
 npm run test:us4     # Linimasa silsilah mutasi tanah
 npm run test:us5     # Manajemen berkas dokumen & metrik dashboard
 
-# Menjalankan modul fitur asli
+# Menjalankan modul fitur asli & audit keamanan
 npm run test:feat1   # Fitur 1 asli
 npm run test:feat2   # Fitur 2 asli
 ```
 
 **Hasil Pengujian Terverifikasi:**
 ```text
-ℹ tests 70
+ℹ tests 74
 ℹ suites 0
-ℹ pass 70
+ℹ pass 74
 ℹ fail 0
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms ~445ms
+ℹ duration_ms ~490ms
 ```
 
 ---
@@ -315,14 +317,18 @@ Untuk rincian lengkap mengenai hasil audit keamanan, format log tersanitasi, ser
 👉 **[`SECURITY.md`](./SECURITY.md)** dan **[`laporan_pengujian.md`](./laporan_pengujian.md)**
 
 ### Ringkasan Praktik Keamanan & Transparansi Batasan:
-1. **Audit Dependensi**: Dependensi runtime produksi (`body-parser`, `qs`, `express`) bersih dari kerentanan tingkat HIGH (berdasarkan audit commit `69f04e5`).
-2. **Perlindungan Data Sensitif (PII Masking)**: NIK (16 digit) dan berbagai format nomor telepon (`08xx`, `+62xx`, `(021)xx`, pemisah spasi/strip) secara otomatis disamarkan dalam log audit:
+1. **Audit Dependensi Produksi**: Dependensi runtime produksi (`body-parser`, `qs`, `express`) bersih dari kerentanan (*0 vulnerabilities*) terverifikasi per 5 November 2026 melalui `npm audit --omit=dev`.
+2. **Pemindaian Riwayat Git (Secret Scan)**: Seluruh riwayat commit Git dari awal proyek hingga commit terkini telah dipindai secara otomatis; terbukti **0 token/secret produksi**. Kredensial yang ada hanyalah password mock/dummy untuk kontainer lokal (`rootpassword` di `docker-compose.yml` & `.env.example`).
+3. **Perlindungan Data Sensitif (PII Masking Komprehensif)**: NIK (16 digit), nomor seluler, maupun telepon kabel PSTN lokal/interlokal secara otomatis disamarkan dalam log audit:
    - NIK Asli: `3271012345670001` $\rightarrow$ Log: `3271********0001`
-   - Telepon Asli: `081234567890` $\rightarrow$ Log: `0812****90`
+   - Telepon Seluler: `081234567890` $\rightarrow$ Log: `0812****90`
    - Telepon Internasional: `+62 812-3456-7890` $\rightarrow$ Log: `+62812****90`
-3. **Penyimpanan Atomik & Penanganan Error**: Penyimpanan ke berkas disk menggunakan berkas sementara lalu `renameSync` untuk mencegah korupsi data. Jika operasi disk gagal, server me-rollback state dan mengembalikan status HTTP 500.
-4. **CORS Origin Whitelist**: Menggunakan pembatasan origin eksplisit (`localhost:3000`, `localhost:4173`, `localhost:5173`) dengan fallback konfigurasi `process.env.CORS_ORIGIN`.
-5. **Batasan Arsitektural MVP**:
-   - Sistem saat ini merupakan prototipe MVP tanpa modul autentikasi (login/session/JWT) dan tanpa Role-Based Access Control (RBAC).
+   - Telepon Kabel PSTN: `021-87901234` atau `(021) 1234567` $\rightarrow$ Log: `021****34` / `(021)****67`
+4. **Sanitasi Path Internal & Pencegahan Log Injection (CWE-117)**: Logger Express menyensor path absolut internal sistem (`C:\Users\...` atau `/home/...` diganti menjadi `[INTERNAL_PATH]`) serta menyaring karakter baris baru (`\r`, `\n`) guna mencegah serangan Log Forging/CRLF Injection.
+5. **Penanganan Error Terpusat (Centralized Error Handler)**: Seluruh unhandled error pada pipeline Express (termasuk penolakan CORS origin dan error sintaks JSON malformed) ditangkap oleh middleware error terpusat yang selalu mengembalikan respons JSON tersanitasi (HTTP 403 Forbidden untuk CORS, HTTP 400 Bad Request untuk JSON error, HTTP 500 untuk server error) tanpa membocorkan stack trace internal ke klien.
+6. **Penyimpanan Atomik & Rollback State**: Penyimpanan ke berkas disk menggunakan berkas sementara lalu `renameSync` untuk mencegah korupsi data. Jika operasi disk gagal, server me-rollback state in-memory dan mengembalikan status HTTP 500.
+7. **CORS Origin Whitelist Terbatas**: Menggunakan whitelist origin ketat (`localhost:3000`, `localhost:4173`, `localhost:5173`) dengan dukungan dinamis konfigurasi `process.env.CORS_ORIGIN`.
+8. **Batasan Arsitektural MVP (Transparansi)**:
+   - Sistem saat ini merupakan prototipe MVP tanpa modul autentikasi sesi pengguna (login/session/JWT) dan tanpa Role-Based Access Control (RBAC).
    - Seluruh endpoint mutasi terbuka untuk kebutuhan pengujian demo lokal.
    - Pembedaan peran (SuperAdmin, BPN Verifikator, Notaris) dan enkripsi at-rest tercatat sebagai backlog pengembangan tahap lanjut.

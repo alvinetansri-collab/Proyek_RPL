@@ -8,7 +8,9 @@ Dokumen ini berisi petunjuk lengkap instalasi, kompilasi build, eksekusi seluruh
 ### 1. Prasyarat Sistem
 
 Pastikan perangkat Anda telah terpasang:
-- **Node.js**: Versi `18.x`, `20.x`, atau `22.x/24.x` (Direkomendasikan Node.js LTS).
+- **Node.js**: **Versi `>= 22.18.0` (atau Node.js 24)**.  
+  > [!IMPORTANT]
+  > **Catatan Kompatibilitas Node.js**: Skrip `npm test` menjalankan `node --test tests/**/*.test.ts` langsung pada berkas TypeScript tanpa loader pihak ketiga (`ts-node` / `tsx`). Eksekusi langsung tanpa flag tambahan (*unflagged native TypeScript execution*) memerlukan minimal **Node.js v22.18.0** atau Node.js 24 (versi Node 22 sebelum 22.18.0 memerlukan flag `--experimental-strip-types`).
 - **npm**: Versi `9.x` atau lebih baru.
 - **Sistem Operasi**: Windows, macOS, atau Linux.
 - **Web Browser**: Google Chrome, Microsoft Edge, Mozilla Firefox, atau Safari versi modern.
@@ -49,9 +51,10 @@ proyek-rpl/
 │       │   │   └── feature-3-document-management/documentManager.ts
 │       │   └── index.ts
 │       └── package.json
-├── tests/                       # Seluruh Folder Unit Test (63 Tests - All Passed)
+├── tests/                       # 8 Folder Unit Test Suites (74 Tests - All Passed)
 │   ├── feature-1-search-registration/
 │   ├── feature-2-completeness-timeline/
+│   ├── security-audit/          # Masking PII multi-format, safeLog, sanitasi path/CRLF, atomisitas
 │   ├── us1-land-registration/
 │   ├── us2-land-search-filter/
 │   ├── us3-document-completeness/
@@ -84,19 +87,19 @@ Perintah ini akan mengompilasi `@proyek-rpl/shared`, `apps/api`, dan mem-bundle 
 
 ### 4. Menjalankan Unit Test (Wajib All Passed)
 
-Seluruh logika bisnis proyek diuji menggunakan Node.js native test runner.
+Seluruh logika bisnis dan keamanan proyek diuji menggunakan Node.js native test runner:
 
-#### A. Menjalankan Semua Unit Test Sekaligus (63 Test Cases)
+#### A. Menjalankan Semua Unit Test Sekaligus (74 Test Cases)
 ```bash
 npm test
 ```
 *Hasil yang diharapkan:*
 ```text
-ℹ tests 63
+ℹ tests 74
 ℹ suites 0
-ℹ pass 63
+ℹ pass 74
 ℹ fail 0
-ℹ duration_ms ~400ms
+ℹ duration_ms ~490ms
 ```
 
 #### B. Menjalankan Unit Test Berdasarkan Modul Tertentu
@@ -107,6 +110,7 @@ npm test
 - **US-3 (Evaluasi Status Dokumen & Lencana Warna)**: `npm run test:us3`
 - **US-4 (Linimasa Silsilah & Mutasi Hak)**: `npm run test:us4`
 - **US-5 (Manajemen Dokumen & Metrik Dashboard)**: `npm run test:us5`
+- **Security Audit (Keamanan, Sanitasi PII, Atomic Write)**: `node --test tests/security-audit/security-logging.test.ts`
 
 ---
 

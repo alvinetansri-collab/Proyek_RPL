@@ -2,7 +2,7 @@
 ## Sistem Monitoring Dokumen dan Status Kepemilikan Tanah
 
 > **Status Akhir MVP**: **SELESAI 100% (READY FOR DEMO)**  
-> **Status Seluruh Unit Test**: **ALL PASSED (63/63 Tests Lulus - 0 Failures)**  
+> **Status Seluruh Unit Test**: **ALL PASSED (74/74 Tests Lulus - 0 Failures)**  
 > **Status Integrasi**: **UI React + Logika Bisnis Monorepo Shared + REST API & Penyimpanan Persisten Terhubung**
 
 ---
@@ -15,15 +15,16 @@
 | **US-2 / Fitur 1** | **Pencarian Cerdas & Filter Multi-Kriteria**<br>- Pencarian teks parsial & *case-insensitive* (sertifikat, pemilik, desa, kecamatan, kabupaten)<br>- Filter dropdown Jenis Hak Tanah (SHM, HGB, Hak Pakai, Girik/Adat)<br>- Filter status kelengkapan dokumen<br>- Tombol reset filter & penanganan data kosong | Inti | **SELESAI** | **PASSED** (10 tests) |
 | **US-3 / Fitur 2** | **Evaluasi Otomatis Kelengkapan Dokumen**<br>- Aturan bisnis: $\ge 3$ berkas = `COMPLETE` (Hijau), $1-2$ berkas = `NEEDS_REVIEW` (Oranye), $0$ berkas = `INCOMPLETE` (Merah)<br>- Pemetaan lencana status, warna, dan deskripsi penjelasan | Inti | **SELESAI** | **PASSED** (8 tests) |
 | **US-4 / Fitur 2** | **Linimasa Silsilah Riwayat Kepemilikan**<br>- Pengurutan kronologis terlama ke terbaru (Ascending)<br>- Pengurutan mutasi terakhir (Descending)<br>- Pencatatan mutasi hak baru (AJB, Waris, Hibah, dll.)<br>- Pembaruan pemilik terdaftar aktif secara otomatis<br>- Penanganan tanggal tidak valid secara aman | Inti | **SELESAI** | **PASSED** (8 tests) |
-| **US-5 / Fitur 3** | **Manajemen Berkas Dokumen & Metrik Dashboard**<br>- Lampirkan berkas kepemilikan baru<br>- Validasi berkas & pencegahan nomor dokumen duplikat<br>- Re-evaluasi status kelengkapan otomatis secara real-time<br>- Pencabutan / penghapusan berkas dokumen<br>- Kalkulasi metrik agregat total & rasio kelengkapan (%) | Inti | **SELESAI** | **PASSED** (10 tests) |
+| **US-5 / Fitur 3** | **Manajemen Berkas Dokumen & Metrik Dashboard**<br>- Lampirkan berkas kepemilikan baru<br>- Validasi berkas & pencegahan nomor dokumen duplikat<br>- Re-evaluasi status kelengkapan otomatis secara real-time<br>- Pencabutan / penghapusan berkas dokumen<br>- Kalkulasi metrik agregat total & rasio kelengkapan (%) | Inti | **SELESAI** | **PASSED** (11 tests) |
 | **Fitur 1 (Suite)** | **Pengujian Regresi Fitur 1 Asli** | Regresi | **SELESAI** | **PASSED** (9 tests) |
 | **Fitur 2 (Suite)** | **Pengujian Regresi Fitur 2 Asli** | Regresi | **SELESAI** | **PASSED** (9 tests) |
-| **Integrasi API** | **Backend REST API & Persistent Storage**<br>- Endpoint CRUD lengkap (`/api/lands`, `/documents`, `/histories`)<br>- Penyimpanan persisten file JSON (`data/lands.json`)<br>- Sinkronisasi LocalStorage di client saat offline | Inti | **SELESAI** | **PASSED** (Endpoint Verified) |
+| **Keamanan & Logging** | **Audit Keamanan & Integritas Data**<br>- Masking NIK 16 digit & nomor telepon multi-format (+62, 08, 021, strip/spasi)<br>- Sanitasi path sistem & pencegahan CRLF log injection (CWE-117)<br>- Penulisan berkas persisten atomik (`atomicWriteFileSync`) | Keamanan | **SELESAI** | **PASSED** (11 tests) |
+| **Integrasi API** | **Backend REST API & Persistent Storage**<br>- Endpoint CRUD lengkap (`/api/lands`, `/documents`, `/histories`)<br>- Penyimpanan persisten file JSON (`data/lands.json`)<br>- CORS origin whitelist & Centralized Error Handler | Inti | **SELESAI** | **PASSED** (Endpoint Verified) |
 | **Fitur UX & Keamanan** | **Alat Bantu Interaktivitas & UX**<br>- Toast feedback notifikasi real-time<br>- Dialog konfirmasi hapus data tanah<br>- Interaktivitas kartu dashboard untuk filter cepat | Pendukung | **SELESAI** | **PASSED** (Interaktif) |
 
 ---
 
-### 2. Matriks Rincian Unit Testing (63 Tests - ALL PASSED)
+### 2. Matriks Rincian Unit Testing (74 Tests - ALL PASSED)
 
 Hasil eksekusi terminal perintah: `npm test`
 
@@ -49,6 +50,17 @@ Hasil eksekusi terminal perintah: `npm test`
 ✔ Fitur 2 - Linimasa Riwayat: Mengurutkan silsilah perpindahan hak tanah secara kronologis (ascending)
 ✔ Fitur 2 - Linimasa Riwayat: Mengurutkan silsilah perpindahan hak tanah dari yang terbaru (descending)
 ✔ Fitur 2 - Metrik Dashboard: Menghitung akumulasi statistik ringkasan dan rasio kelengkapan
+✔ Keamanan & Logging: Masking NIK 16 digit menyamarkan 8 digit tengah
+✔ Keamanan & Logging: Masking nomor telepon format seluler 08xx
+✔ Keamanan & Logging: Masking nomor telepon format internasional +62
+✔ Keamanan & Logging: Masking nomor telepon dengan pemisah spasi dan tanda minus
+✔ Keamanan & Logging: Masking telepon lokal dengan kode area tanda kurung
+✔ Keamanan & Logging: Masking nomor telepon PSTN landline seperti 021-87901234
+✔ Keamanan & Logging: safeLog menyensor path absolut internal sistem menjadi [INTERNAL_PATH]
+✔ Keamanan & Logging: safeLog membersihkan karakter CRLF newline untuk mencegah log injection (CWE-117)
+✔ Keamanan & Logging: safeLog menghasilkan format terstruktur dengan timestamp dan level
+✔ Keamanan & Logging: safeLog mencatat penolakan CORS origin terlarang sebagai level WARN
+✔ Keamanan & Penyimpanan: atomicWriteFileSync menulis data persisten tanpa corrupt
 ✔ US-1: Pendaftaran bidang tanah baru berhasil jika seluruh field wajib valid
 ✔ US-1: Menolak pendaftaran jika nomor sertifikat kosong
 ✔ US-1: Menolak pendaftaran jika nama pemilik kosong
@@ -96,7 +108,7 @@ Hasil eksekusi terminal perintah: `npm test`
 ✔ US-5: Kalkulasi persentase kelengkapan dashboard (completeness rate) tepat
 
 ==================================================
-TOTAL UJI: 63 | LULUS: 63 | GAGAL: 0 | STATUS: ALL PASSED
+TOTAL UJI: 74 | LULUS: 74 | GAGAL: 0 | STATUS: ALL PASSED
 ==================================================
 ```
 
