@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: landtracker-api
+    runtime: node
+    plan: free
+    region: singapore
+    buildCommand: npm install && npm run build:shared && npm run build:api
+    startCommand: npm run start:api
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: CORS_ORIGIN
+        value: https://localhost:3000
