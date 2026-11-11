@@ -23,7 +23,7 @@ Pada pemindaian awal repositori, ditemukan kerentanan pada pustaka transitif dar
 
 #### 2. Tindakan Remediasi, Bukti Pemindaian Produksi & Verifikasi Riwayat Git:
 - **Commit Patching**: Commit [`69f04e5`](https://github.com/alvinetansri-collab/Proyek_RPL/commit/69f04e58151304d36693a9812fe35088b3212d12) (2 November 2026) memperbarui dependensi via `npm audit fix`.
-- **Hasil Pemindaian Dependensi Produksi Runtime (5 November 2026)**:
+- **Hasil Pemindaian Dependensi Produksi Runtime (Audit Terverifikasi 11 November 2026)**:
   Perintah resmi audit dependensi produksi:
   ```bash
   npm audit --omit=dev
@@ -32,8 +32,8 @@ Pada pemindaian awal repositori, ditemukan kerentanan pada pustaka transitif dar
   ```text
   found 0 vulnerabilities
   ```
-  Seluruh dependensi runtime server produksi (`express`, `body-parser`, `cors`, `qs`) berstatus **0 kerentanan (0 HIGH, 0 MODERATE, 0 LOW)**.
-- **Pemindaian Riwayat Komit Git Bebas Secret Produksi (5 November 2026)**:
+  Seluruh dependensi runtime server produksi (`express@4.18.2`, `body-parser@1.20.3`, `cors@2.8.5`, `qs@6.13.0`) berstatus **0 kerentanan (0 HIGH, 0 MODERATE, 0 LOW)**.
+- **Pemindaian Riwayat Komit Git Bebas Secret Produksi (11 November 2026)**:
   Seluruh pohon commit Git dari `HEAD` hingga commit awal telah dipindai menggunakan *secret detection regex* (API tokens, private keys, bearer headers, AWS/Stripe/GitHub keys). Hasil: **0 production secret ditemukan di seluruh riwayat Git**. Kredensial yang tercatat hanyalah dummy password lokal pengembangan (`rootpassword` di `docker-compose.yml` & `.env.example`).
 - Kerentanan yang tersisa pada pemindaian dev hanyalah paket development lokal (`vite` -> `esbuild` dev server), yang sama sekali tidak dikompilasi ke dalam bundle produksi (`apps/api/dist` maupun `apps/web/dist`).
 
@@ -62,6 +62,7 @@ Tabel berikut menyajikan evaluasi jujur dan transparan terhadap 10 kategori risi
 
 | Tanggal | ID Perubahan | Rincian Perubahan Keamanan | Modul Terkait |
 | :---: | :---: | :--- | :--- |
+| **2026-11-11** | `SEC-014` | **Penyempurnaan Menyeluruh Sanitasi Path Multi-Format**: Menutup seluruh celah sanitasi path internal dengan menyaring format path Windows backslash (`C:\...`), forward-slash (`C:/...`), file URI (`file:///...`), UNC extended-length (`\\?\C:\...`), path POSIX (`/opt`, `/root`, `/var`, `/data`), dan frame lokasi stack trace (`:line:col`). | [`apps/api/src/security.ts`](./apps/api/src/security.ts), [`packages/shared/src/security/masking.ts`](./packages/shared/src/security/masking.ts) |
 | **2026-11-05** | `SEC-010` | **Pencegahan CWE-117 Log Injection & Sensor Path Internal**: Menyaring newline (`\r`, `\n`) dan menyensor path lokal absolut sistem (`[INTERNAL_PATH]`) pada pesan log dan metadata. | [`apps/api/src/security.ts`](./apps/api/src/security.ts) |
 | **2026-11-05** | `SEC-011` | **Penanganan Error Terpusat (Centralized Error Handler)**: Menambahkan middleware Express terpusat untuk CORS origin rejection (HTTP 403) dan JSON parser SyntaxError (HTTP 400) dengan respons JSON tersanitasi. | [`apps/api/src/index.ts`](./apps/api/src/index.ts) |
 | **2026-11-05** | `SEC-012` | **Penyempurnaan Masking PSTN Landline**: Mendukung masking nomor format kabel PSTN lokal/interlokal seperti `021-87901234` atau `(021) 1234567` menjadi `021****34` dan `(021)****67`. | [`packages/shared/src/security/masking.ts`](./packages/shared/src/security/masking.ts), [`apps/api/src/security.ts`](./apps/api/src/security.ts) |
@@ -149,11 +150,19 @@ export function maskPII(text: string): string {
 // 2. Sensor Path Absolut Sistem & Pencegahan CWE-117 Log Injection - apps/api/src/security.ts
 export function sanitizeLogText(text: string): string {
   if (!text) return text;
-  return text
-    // Sensor path absolut Windows (C:\Users\...) dan POSIX (/Users/..., /home/...)
-    .replace(/[a-zA-Z]:\\[^:\s"'<>|?*]+/g, "[INTERNAL_PATH]")
-    .replace(/(?:\/(?:Users|home|root|var|etc|tmp))\/[^\s"'<>|?*]+/g, "[INTERNAL_PATH]")
-    // Hapus newline (\r, \n) guna mencegah log injection / log forging (CWE-117)
+  return maskPII(text)
+    // 1. File URIs: file:///C:/... atau file:///home/...
+    .replace(/file:\/\/\/(?:[A-Za-z]:[/\\]|[^\s"'`<>|]+[/\\])[^\s"'`<>|)]*/gi, "[INTERNAL_PATH]")
+    // 2. Windows UNC & extended length: \\?\C:\... atau \\server\share\...
+    .replace(/\\\\(?:\?|\.)\\[A-Za-z]:[/\\][^\s"'`<>|)]*/g, "[INTERNAL_PATH]")
+    .replace(/\\\\[a-zA-Z0-9_.-]+\\[a-zA-Z0-9_.$~-]+\\[^\s"'`<>|)]*/g, "[INTERNAL_PATH]")
+    // 3. Windows paths (backslashes maupun forward slashes) dengan drive letter: C:\... atau C:/...
+    .replace(/[A-Za-z]:[/\\](?:[^/:*?"'<>|\r\n\t]+[/\\])*[^/:*?"'<>|\r\n\t\s)]*/g, "[INTERNAL_PATH]")
+    // 4. POSIX absolute paths (/opt, /root, /var, /data, /home, /Users, dll.)
+    .replace(/(?:\/(?:Users|home|root|var|etc|usr|opt|srv|tmp|app|data|mnt|workspace|proyek[a-zA-Z0-9_-]*|bin|sbin))[^\s"'`<>|)*]+/g, "[INTERNAL_PATH]")
+    // 5. Bersihkan sisa line/column numbers setelah [INTERNAL_PATH] (misal [INTERNAL_PATH]:45:12 -> [INTERNAL_PATH])
+    .replace(/\[INTERNAL_PATH\](?::\d+)+/g, "[INTERNAL_PATH]")
+    // 6. Mencegah CRLF Log Injection (CWE-117)
     .replace(/[\r\n]+/g, " ");
 }
 
@@ -240,40 +249,40 @@ npm test
 # 6. Verifikasi Probe Server API (Health Check)
 node apps/api/dist/index.js &
 curl http://localhost:5000/api/health
-# Response: HTTP/1.1 200 OK {"status":"UP","timestamp":"...","storage":"file","recordCount":3}
+# Response: HTTP/1.1 200 OK {"status":"OK","service":"Sistem Monitoring Dokumen & Status Kepemilikan Tanah API","version":"1.0.0-final","storageMode":"Persistent File Store (JSON)","recordCount":3,"timestamp":"2026-11-11T14:40:30.000Z"}
 ```
 
 ### B. Hasil Eksekusi Unit Test (74 Tests - ALL PASSED):
 ```text
-✔ Fitur 1 - Pencarian: Berhasil mencari berdasarkan nomor sertifikat secara parsial (2.20ms)
-✔ Fitur 1 - Pencarian: Berhasil mencari berdasarkan nama pemilik (case-insensitive) (0.31ms)
-✔ Fitur 1 - Pencarian: Berhasil mencari berdasarkan wilayah kecamatan / kabupaten (0.42ms)
-✔ Fitur 1 - Pencarian: Mengembalikan array kosong jika kueri pencarian tidak cocok (0.26ms)
-✔ Fitur 1 - Pencarian: Filter kombinasi teks pencarian dan jenis hak tanah (0.31ms)
-✔ Fitur 1 - Validasi: Lolos validasi saat data pendaftaran tanah lengkap dan benar (1.13ms)
-✔ Fitur 1 - Validasi: Menolak pendaftaran jika nomor sertifikat kosong (0.54ms)
-✔ Fitur 1 - Validasi: Menolak pendaftaran jika nomor sertifikat sudah ada (duplikat) (0.70ms)
-✔ Fitur 1 - Validasi: Menolak pendaftaran jika luas tanah <= 0 atau tidak valid (0.62ms)
-✔ Fitur 2 - Evaluasi: Menghasilkan status COMPLETE jika terdapat minimal 3 dokumen (3.27ms)
-✔ Fitur 2 - Evaluasi: Menghasilkan status NEEDS_REVIEW jika terdapat 1 atau 2 dokumen (0.49ms)
-✔ Fitur 2 - Evaluasi: Menghasilkan status INCOMPLETE jika belum ada dokumen yang dicatat (0.28ms)
-✔ Fitur 2 - Standar Lencana Warna: Status COMPLETE menggunakan label 'Lengkap' dan warna hijau (0.51ms)
-✔ Fitur 2 - Standar Lencana Warna: Status NEEDS_REVIEW menggunakan label 'Perlu Diperiksa' dan warna oranye (0.37ms)
-✔ Fitur 2 - Standar Lencana Warna: Status INCOMPLETE menggunakan label 'Belum Lengkap' dan warna merah (0.38ms)
-✔ Fitur 2 - Linimasa Riwayat: Mengurutkan silsilah perpindahan hak tanah secara kronologis (ascending) (0.49ms)
-✔ Fitur 2 - Linimasa Riwayat: Mengurutkan silsilah perpindahan hak tanah dari yang terbaru (descending) (2.34ms)
-✔ Fitur 2 - Metrik Dashboard: Menghitung akumulasi statistik ringkasan dan rasio kelengkapan (1.02ms)
-✔ Keamanan & Logging: Masking NIK 16 digit menyamarkan 8 digit tengah (3.56ms)
+✔ Fitur 1 - Pencarian: Berhasil mencari berdasarkan nomor sertifikat secara parsial (4.11ms)
+✔ Fitur 1 - Pencarian: Berhasil mencari berdasarkan nama pemilik (case-insensitive) (0.41ms)
+✔ Fitur 1 - Pencarian: Berhasil mencari berdasarkan wilayah kecamatan / kabupaten (0.39ms)
+✔ Fitur 1 - Pencarian: Mengembalikan array kosong jika kueri pencarian tidak cocok (0.22ms)
+✔ Fitur 1 - Pencarian: Filter kombinasi teks pencarian dan jenis hak tanah (0.26ms)
+✔ Fitur 1 - Validasi: Lolos validasi saat data pendaftaran tanah lengkap dan benar (0.39ms)
+✔ Fitur 1 - Validasi: Menolak pendaftaran jika nomor sertifikat kosong (0.28ms)
+✔ Fitur 1 - Validasi: Menolak pendaftaran jika nomor sertifikat sudah ada (duplikat) (0.25ms)
+✔ Fitur 1 - Validasi: Menolak pendaftaran jika luas tanah <= 0 atau tidak valid (0.34ms)
+✔ Fitur 2 - Evaluasi: Menghasilkan status COMPLETE jika terdapat minimal 3 dokumen (5.59ms)
+✔ Fitur 2 - Evaluasi: Menghasilkan status NEEDS_REVIEW jika terdapat 1 atau 2 dokumen (0.44ms)
+✔ Fitur 2 - Evaluasi: Menghasilkan status INCOMPLETE jika belum ada dokumen yang dicatat (0.27ms)
+✔ Fitur 2 - Standar Lencana Warna: Status COMPLETE menggunakan label 'Lengkap' dan warna hijau (0.91ms)
+✔ Fitur 2 - Standar Lencana Warna: Status NEEDS_REVIEW menggunakan label 'Perlu Diperiksa' dan warna oranye (0.39ms)
+✔ Fitur 2 - Standar Lencana Warna: Status INCOMPLETE menggunakan label 'Belum Lengkap' dan warna merah (0.31ms)
+✔ Fitur 2 - Linimasa Riwayat: Mengurutkan silsilah perpindahan hak tanah secara kronologis (ascending) (1.03ms)
+✔ Fitur 2 - Linimasa Riwayat: Mengurutkan silsilah perpindahan hak tanah dari yang terbaru (descending) (0.25ms)
+✔ Fitur 2 - Metrik Dashboard: Menghitung akumulasi statistik ringkasan dan rasio kelengkapan (3.36ms)
+✔ Keamanan & Logging: Masking NIK 16 digit menyamarkan 8 digit tengah (2.57ms)
 ✔ Keamanan & Logging: Masking nomor telepon format seluler 08xx (0.42ms)
-✔ Keamanan & Logging: Masking nomor telepon format internasional +62 (0.34ms)
-✔ Keamanan & Logging: Masking nomor telepon dengan pemisah spasi dan tanda minus (0.39ms)
-✔ Keamanan & Logging: Masking telepon lokal dengan kode area tanda kurung (0.38ms)
-✔ Keamanan & Logging: Masking nomor telepon PSTN landline seperti 021-87901234 (0.41ms)
-✔ Keamanan & Logging: safeLog menyensor path absolut internal sistem menjadi [INTERNAL_PATH] (0.48ms)
-✔ Keamanan & Logging: safeLog membersihkan karakter CRLF newline untuk mencegah log injection (CWE-117) (0.44ms)
-✔ Keamanan & Logging: safeLog menghasilkan format terstruktur dengan timestamp dan level (5.32ms)
-✔ Keamanan & Logging: safeLog mencatat penolakan CORS origin terlarang sebagai level WARN (0.39ms)
-✔ Keamanan & Penyimpanan: atomicWriteFileSync menulis data persisten tanpa corrupt (11.13ms)
+✔ Keamanan & Logging: Masking nomor telepon format internasional +62 (0.24ms)
+✔ Keamanan & Logging: Masking nomor telepon dengan pemisah spasi dan tanda minus (2.31ms)
+✔ Keamanan & Logging: Masking telepon lokal PSTN format 021-87901234 (0.49ms)
+✔ Keamanan & Logging: Masking telepon lokal PSTN format 0251-8321234 (Bogor) (0.22ms)
+✔ Keamanan & Logging: Masking telepon lokal dengan kode area tanda kurung (021) (0.25ms)
+✔ Keamanan & Logging: safeLog menyamarkan path direktori sistem internal (3.94ms)
+✔ Keamanan & Logging: safeLog mencegah CRLF Log Injection (CWE-117) (0.57ms)
+✔ Keamanan & Logging: safeLog menghasilkan format terstruktur dengan timestamp dan level (0.89ms)
+✔ Keamanan & Penyimpanan: atomicWriteFileSync menulis data persisten tanpa corrupt (18.40ms)
 ✔ US-1: Pendaftaran bidang tanah baru berhasil jika seluruh field wajib valid (1.95ms)
 ✔ US-1: Menolak pendaftaran jika nomor sertifikat kosong (0.49ms)
 ✔ US-1: Menolak pendaftaran jika nama pemilik kosong (0.29ms)

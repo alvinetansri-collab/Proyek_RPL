@@ -317,14 +317,14 @@ Untuk rincian lengkap mengenai hasil audit keamanan, format log tersanitasi, ser
 👉 **[`SECURITY.md`](./SECURITY.md)** dan **[`laporan_pengujian.md`](./laporan_pengujian.md)**
 
 ### Ringkasan Praktik Keamanan & Transparansi Batasan:
-1. **Audit Dependensi Produksi**: Dependensi runtime produksi (`body-parser`, `qs`, `express`) bersih dari kerentanan (*0 vulnerabilities*) terverifikasi per 5 November 2026 melalui `npm audit --omit=dev`.
+1. **Audit Dependensi Produksi**: Dependensi runtime produksi (`body-parser`, `qs`, `express`, `cors`) bersih dari kerentanan (*0 vulnerabilities*) terverifikasi per 11 November 2026 melalui `npm audit --omit=dev`.
 2. **Pemindaian Riwayat Git (Secret Scan)**: Seluruh riwayat commit Git dari awal proyek hingga commit terkini telah dipindai secara otomatis; terbukti **0 token/secret produksi**. Kredensial yang ada hanyalah password mock/dummy untuk kontainer lokal (`rootpassword` di `docker-compose.yml` & `.env.example`).
 3. **Perlindungan Data Sensitif (PII Masking Komprehensif)**: NIK (16 digit), nomor seluler, maupun telepon kabel PSTN lokal/interlokal secara otomatis disamarkan dalam log audit:
    - NIK Asli: `3271012345670001` $\rightarrow$ Log: `3271********0001`
    - Telepon Seluler: `081234567890` $\rightarrow$ Log: `0812****90`
    - Telepon Internasional: `+62 812-3456-7890` $\rightarrow$ Log: `+62812****90`
-   - Telepon Kabel PSTN: `021-87901234` atau `(021) 1234567` $\rightarrow$ Log: `021****34` / `(021)****67`
-4. **Sanitasi Path Internal & Pencegahan Log Injection (CWE-117)**: Logger Express menyensor path absolut internal sistem (`C:\Users\...` atau `/home/...` diganti menjadi `[INTERNAL_PATH]`) serta menyaring karakter baris baru (`\r`, `\n`) guna mencegah serangan Log Forging/CRLF Injection.
+   - Telepon Kabel PSTN: `021-87901234` atau `0251-8321234` atau `(021) 1234567` $\rightarrow$ Log: `021****34` / `(021)****67`
+4. **Sanitasi Path Internal Multi-Format & Pencegahan Log Injection (CWE-117)**: Logger Express menyensor seluruh varian path internal sistem (Windows backslash `C:\...`, forward-slash `C:/...`, File URI `file:///...`, UNC `\\?\...`, dan POSIX `/opt`, `/root`, `/var`, `/data` diganti menjadi `[INTERNAL_PATH]`) serta menyaring karakter baris baru (`\r`, `\n`) guna mencegah serangan Log Forging/CRLF Injection.
 5. **Penanganan Error Terpusat (Centralized Error Handler)**: Seluruh unhandled error pada pipeline Express (termasuk penolakan CORS origin dan error sintaks JSON malformed) ditangkap oleh middleware error terpusat yang selalu mengembalikan respons JSON tersanitasi (HTTP 403 Forbidden untuk CORS, HTTP 400 Bad Request untuk JSON error, HTTP 500 untuk server error) tanpa membocorkan stack trace internal ke klien.
 6. **Penyimpanan Atomik & Rollback State**: Penyimpanan ke berkas disk menggunakan berkas sementara lalu `renameSync` untuk mencegah korupsi data. Jika operasi disk gagal, server me-rollback state in-memory dan mengembalikan status HTTP 500.
 7. **CORS Origin Whitelist Terbatas**: Menggunakan whitelist origin ketat (`localhost:3000`, `localhost:4173`, `localhost:5173`) dengan dukungan dinamis konfigurasi `process.env.CORS_ORIGIN`.

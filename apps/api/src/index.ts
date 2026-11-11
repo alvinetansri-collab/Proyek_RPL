@@ -668,7 +668,7 @@ if (process.env.NODE_ENV !== "test") {
   app.listen(PORT, () => {
     console.log(`====================================================`);
     console.log(`Server Backend API Proyek RPL Berjalan di Port ${PORT}`);
-    console.log(`Mode Penyimpanan: Persistent JSON Storage (${dataFilePath})`);
+    console.log(`Mode Penyimpanan: Persistent JSON Storage (apps/api/data/lands.json)`);
     console.log(`Jumlah Data Terdaftar: ${landsStore.length} bidang tanah`);
     console.log(`Endpoint Health Check: http://localhost:${PORT}/api/health`);
     console.log(`====================================================`);

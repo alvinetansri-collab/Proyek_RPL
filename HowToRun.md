@@ -69,7 +69,7 @@ proyek-rpl/
 
 ### 3. Instalasi Dependensi & Build
 
-Jalankan perintah berikut di folder akar proyek (`c:\Users\hp5cd\Documents\proyek rpl`):
+Jalankan perintah berikut di folder akar proyek (`proyek-rpl/`):
 
 #### A. Instalasi Dependensi Seluruh Workspace
 ```bash
