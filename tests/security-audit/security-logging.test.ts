@@ -56,10 +56,48 @@ test("Keamanan & Logging: Masking telepon lokal dengan kode area tanda kurung (0
 });
 
 test("Keamanan & Logging: safeLog menyamarkan path direktori sistem internal", () => {
-  const sensitivePath = "C:\\Users\\hp5cd\\Documents\\proyek rpl\\apps\\api\\data\\lands.json";
-  const output = safeLog("ERROR", `Gagal membaca file dari ${sensitivePath}`);
-  assert.strictEqual(output.includes("hp5cd"), false);
-  assert.strictEqual(output.includes("[INTERNAL_PATH]"), true);
+  // 1. Path absolut Windows standar (backslashes)
+  const winBackslash = "C:\\Users\\hp5cd\\Documents\\proyek rpl\\apps\\api\\data\\lands.json";
+  const out1 = safeLog("ERROR", `Gagal membaca file dari ${winBackslash}`);
+  assert.strictEqual(out1.includes("hp5cd"), false);
+  assert.strictEqual(out1.includes("[INTERNAL_PATH]"), true);
+
+  // 2. Path Windows dengan forward slashes (sering muncul di stack trace Node/Vite)
+  const winForward = "C:/Users/hp5cd/Documents/proyek rpl/apps/api/src/database.ts:45:12";
+  const out2 = safeLog("ERROR", `Error at ${winForward}`);
+  assert.strictEqual(out2.includes("hp5cd"), false);
+  assert.strictEqual(out2.includes("[INTERNAL_PATH]"), true);
+  assert.strictEqual(out2.includes(":45:12"), false);
+
+  // 3. File URI scheme (file:///C:/...)
+  const fileUri = "file:///C:/Users/hp5cd/Documents/proyek%20rpl/apps/api/src/security.ts";
+  const out3 = safeLog("INFO", `Module loaded from ${fileUri}`);
+  assert.strictEqual(out3.includes("hp5cd"), false);
+  assert.strictEqual(out3.includes("[INTERNAL_PATH]"), true);
+
+  // 4. UNC / extended-length path (\\?\C:\...)
+  const uncPath = "\\\\?\\C:\\Users\\hp5cd\\Documents\\lands.json";
+  const out4 = safeLog("WARN", `Path UNC: ${uncPath}`);
+  assert.strictEqual(out4.includes("hp5cd"), false);
+  assert.strictEqual(out4.includes("[INTERNAL_PATH]"), true);
+
+  // 5. Path POSIX absolut (/opt/..., /root/...)
+  const posixPath = "/opt/project/secret/db.sqlite";
+  const out5 = safeLog("ERROR", `Database offline at ${posixPath}`);
+  assert.strictEqual(out5.includes("/opt/project"), false);
+  assert.strictEqual(out5.includes("[INTERNAL_PATH]"), true);
+
+  // 6. Stack trace frame dengan kurung: at Object.<anonymous> (C:\Users\hp5cd\app.ts:10:5)
+  const stackFrame = "at Object.<anonymous> (C:\\Users\\hp5cd\\app.ts:10:5)";
+  const out6 = safeLog("ERROR", stackFrame);
+  assert.strictEqual(out6.includes("hp5cd"), false);
+  assert.strictEqual(out6.includes("at Object.<anonymous> ([INTERNAL_PATH])"), true);
+
+  // 7. Error instance dilewatkan sebagai meta
+  const errObj = new Error("EACCES: permission denied, open 'C:\\Users\\hp5cd\\data.json'");
+  const out7 = safeLog("ERROR", "Akses disk ditolak", errObj);
+  assert.strictEqual(out7.includes("hp5cd"), false);
+  assert.strictEqual(out7.includes("[INTERNAL_PATH]"), true);
 });
 
 test("Keamanan & Logging: safeLog mencegah CRLF Log Injection (CWE-117)", () => {

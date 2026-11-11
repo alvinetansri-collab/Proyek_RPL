@@ -54,12 +54,12 @@ Hasil eksekusi terminal perintah: `npm test`
 ✔ Keamanan & Logging: Masking nomor telepon format seluler 08xx
 ✔ Keamanan & Logging: Masking nomor telepon format internasional +62
 ✔ Keamanan & Logging: Masking nomor telepon dengan pemisah spasi dan tanda minus
-✔ Keamanan & Logging: Masking telepon lokal dengan kode area tanda kurung
-✔ Keamanan & Logging: Masking nomor telepon PSTN landline seperti 021-87901234
-✔ Keamanan & Logging: safeLog menyensor path absolut internal sistem menjadi [INTERNAL_PATH]
-✔ Keamanan & Logging: safeLog membersihkan karakter CRLF newline untuk mencegah log injection (CWE-117)
+✔ Keamanan & Logging: Masking telepon lokal PSTN format 021-87901234
+✔ Keamanan & Logging: Masking telepon lokal PSTN format 0251-8321234 (Bogor)
+✔ Keamanan & Logging: Masking telepon lokal dengan kode area tanda kurung (021)
+✔ Keamanan & Logging: safeLog menyamarkan path direktori sistem internal
+✔ Keamanan & Logging: safeLog mencegah CRLF Log Injection (CWE-117)
 ✔ Keamanan & Logging: safeLog menghasilkan format terstruktur dengan timestamp dan level
-✔ Keamanan & Logging: safeLog mencatat penolakan CORS origin terlarang sebagai level WARN
 ✔ Keamanan & Penyimpanan: atomicWriteFileSync menulis data persisten tanpa corrupt
 ✔ US-1: Pendaftaran bidang tanah baru berhasil jika seluruh field wajib valid
 ✔ US-1: Menolak pendaftaran jika nomor sertifikat kosong

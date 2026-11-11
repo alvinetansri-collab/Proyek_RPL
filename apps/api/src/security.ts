@@ -20,18 +20,30 @@ export function maskPII(text: string): string {
 
 /**
  * Sanitasi Teks Log (Security Logging Sanitizer)
- * 1. Masking PII (NIK dan nomor telepon)
- * 2. Mencegah kebocoran struktur direktori lokal / internal file paths
+ * 1. Masking PII (NIK dan nomor telepon seluler, internasional, dan PSTN landline)
+ * 2. Mencegah kebocoran struktur direktori lokal / internal file paths:
+ *    - Windows absolute paths (C:\... dan C:/...)
+ *    - Windows UNC & extended paths (\\?\C:\... dan \\server\share\...)
+ *    - File URIs (file:///C:/... dan file:///home/...)
+ *    - POSIX absolute paths (/home/..., /root/..., /opt/..., /var/..., /data/..., dll.)
+ *    - Stack trace frame line/column suffix (:line:col)
  * 3. Mencegah Log Injection / CRLF Injection (CWE-117) dengan menghapus karakter baris baru
  */
 export function sanitizeLogText(text: string): string {
   if (!text) return text;
   return maskPII(text)
-    // Sensor Windows full path (misal: C:\Users\hp5cd\Documents\... -> [INTERNAL_PATH])
-    .replace(/[A-Za-z]:\\(?:[^\\/:*?"<>|\r\n]+\\)+[^\\/:*?"<>|\r\n]*/g, "[INTERNAL_PATH]")
-    // Sensor POSIX full path (misal: /home/user/... atau /Users/user/... -> [INTERNAL_PATH])
-    .replace(/(?:\/(?:Users|home|var|etc|usr|tmp|app)[^\s"'`<>|?*:\r\n]*)/g, "[INTERNAL_PATH]")
-    // Mencegah CRLF Log Injection (CWE-117)
+    // 1. File URIs: file:///C:/... atau file:///home/...
+    .replace(/file:\/\/\/(?:[A-Za-z]:[/\\]|[^\s"'`<>|]+[/\\])[^\s"'`<>|)]*/gi, "[INTERNAL_PATH]")
+    // 2. Windows UNC & extended length: \\?\C:\... atau \\server\share\...
+    .replace(/\\\\(?:\?|\.)\\[A-Za-z]:[/\\][^\s"'`<>|)]*/g, "[INTERNAL_PATH]")
+    .replace(/\\\\[a-zA-Z0-9_.-]+\\[a-zA-Z0-9_.$~-]+\\[^\s"'`<>|)]*/g, "[INTERNAL_PATH]")
+    // 3. Windows paths (backslashes maupun forward slashes) dengan drive letter: C:\... atau C:/...
+    .replace(/[A-Za-z]:[/\\](?:[^/:*?"'<>|\r\n\t]+[/\\])*[^/:*?"'<>|\r\n\t\s)]*/g, "[INTERNAL_PATH]")
+    // 4. POSIX absolute paths
+    .replace(/(?:\/(?:Users|home|root|var|etc|usr|opt|srv|tmp|app|data|mnt|workspace|proyek[a-zA-Z0-9_-]*|bin|sbin))[^\s"'`<>|)*]+/g, "[INTERNAL_PATH]")
+    // 5. Bersihkan sisa line/column numbers setelah [INTERNAL_PATH] (misal [INTERNAL_PATH]:45:12 -> [INTERNAL_PATH])
+    .replace(/\[INTERNAL_PATH\](?::\d+)+/g, "[INTERNAL_PATH]")
+    // 6. Mencegah CRLF Log Injection (CWE-117)
     .replace(/[\r\n]+/g, " ");
 }
 
@@ -48,7 +60,14 @@ export function safeLog(
   let sanitizedMeta = "";
   if (meta !== undefined && meta !== null) {
     try {
-      const raw = typeof meta === "string" ? meta : JSON.stringify(meta);
+      let raw: string;
+      if (meta instanceof Error) {
+        raw = meta.message;
+      } else if (typeof meta === "string") {
+        raw = meta;
+      } else {
+        raw = JSON.stringify(meta);
+      }
       sanitizedMeta = " | " + sanitizeLogText(raw);
     } catch {
       sanitizedMeta = " | [Metadata omitted]";

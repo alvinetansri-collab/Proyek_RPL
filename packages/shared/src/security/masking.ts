@@ -14,3 +14,20 @@ export function maskPII(text: string): string {
     // Masking telepon lokal / PSTN dengan kode area dengan atau tanpa tanda kurung (misal: 021-87901234, (021) 1234567, 0251-8321234)
     .replace(/\b(\(?0[1-79]\d{1,2}\)?)[-\s]?\d{2,4}[-\s]?\d{0,4}[-\s]?(\d{2,4})\b/g, "$1****$2");
 }
+
+/**
+ * Sanitasi Teks Log (Security Logging Sanitizer)
+ * Menyamarkan data PII, menyensor path absolut internal sistem (Windows, POSIX, File URI, UNC),
+ * dan mencegah CRLF Log Injection (CWE-117).
+ */
+export function sanitizeLogText(text: string): string {
+  if (!text) return text;
+  return maskPII(text)
+    .replace(/file:\/\/\/(?:[A-Za-z]:[/\\]|[^\s"'`<>|]+[/\\])[^\s"'`<>|)]*/gi, "[INTERNAL_PATH]")
+    .replace(/\\\\(?:\?|\.)\\[A-Za-z]:[/\\][^\s"'`<>|)]*/g, "[INTERNAL_PATH]")
+    .replace(/\\\\[a-zA-Z0-9_.-]+\\[a-zA-Z0-9_.$~-]+\\[^\s"'`<>|)]*/g, "[INTERNAL_PATH]")
+    .replace(/[A-Za-z]:[/\\](?:[^/:*?"'<>|\r\n\t]+[/\\])*[^/:*?"'<>|\r\n\t\s)]*/g, "[INTERNAL_PATH]")
+    .replace(/(?:\/(?:Users|home|root|var|etc|usr|opt|srv|tmp|app|data|mnt|workspace|proyek[a-zA-Z0-9_-]*|bin|sbin))[^\s"'`<>|)*]+/g, "[INTERNAL_PATH]")
+    .replace(/\[INTERNAL_PATH\](?::\d+)+/g, "[INTERNAL_PATH]")
+    .replace(/[\r\n]+/g, " ");
+}
