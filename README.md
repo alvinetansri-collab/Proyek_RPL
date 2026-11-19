@@ -2,6 +2,8 @@
 
 [![Unit Tests](https://img.shields.io/badge/Unit%20Tests-74%2F74%20PASSED-brightgreen.svg)](https://github.com/alvinetansri-collab/Proyek_RPL)
 [![Pull Request](https://img.shields.io/badge/Pull%20Request-%231%20OPEN-brightgreen.svg)](https://github.com/alvinetansri-collab/Proyek_RPL/pull/1)
+[![GitHub Issues](https://img.shields.io/badge/GitHub%20Issues-10%2F10%20SOLVED-brightgreen.svg)](https://github.com/alvinetansri-collab/Proyek_RPL/issues?q=is%3Aissue+is%3Aclosed)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel%20Production-success.svg)](https://proyek-rpl.vercel.app/)
 [![Node.js Version](https://img.shields.io/badge/Node.js-%3E%3D22.18.0-blue.svg)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0%2B-blue.svg)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-18-61dafb.svg)](https://react.dev/)
@@ -30,6 +32,7 @@ Video demonstrasi interaktif seluruh alur sistem monitoring tanah (MVP) tersedia
 8. [Panduan Build & Deploy (Preview Lokal vs Hosting Remote)](#panduan-build--deploy-preview-lokal-vs-hosting-remote)
 9. [Dokumentasi REST API Endpoints](#dokumentasi-rest-api-endpoints)
 10. [Keamanan, Logging Aman, & Batasan MVP](#keamanan-logging-aman--batasan-mvp)
+11. [Pelacakan Masalah Pasca-Deploy & Implementasi Kode Perbaikan (10 GitHub Issues)](#pelacakan-masalah-pasca-deploy--implementasi-kode-perbaikan-10-github-issues)
 
 ---
 
@@ -332,3 +335,177 @@ Untuk rincian lengkap mengenai hasil audit keamanan, format log tersanitasi, ser
    - Sistem saat ini merupakan prototipe MVP tanpa modul autentikasi sesi pengguna (login/session/JWT) dan tanpa Role-Based Access Control (RBAC).
    - Seluruh endpoint mutasi terbuka untuk kebutuhan pengujian demo lokal.
    - Pembedaan peran (SuperAdmin, BPN Verifikator, Notaris) dan enkripsi at-rest tercatat sebagai backlog pengembangan tahap lanjut.
+
+---
+
+## Pelacakan Masalah Pasca-Deploy & Implementasi Kode Perbaikan (10 GitHub Issues)
+
+Sesuai dengan standar siklus hidup rekayasa perangkat lunak (*Software Quality Assurance & Issue Tracking*), seluruh temuan pasca-deployment dan pengujian operasional dicatat secara transparan pada GitHub Issues repositori ini.
+
+👉 **[Tautan Langsung Seluruh 10 Tiket Issues Terselesaikan (Closed)](https://github.com/alvinetansri-collab/Proyek_RPL/issues?q=is%3Aissue+is%3Aclosed)**
+
+### Matriks Rangkuman Masalah & Status Solved
+
+| No | Issue GitHub | Kategori Sumber | Berkas yang Diperbaiki | Status |
+| :---: | :--- | :---: | :--- | :---: |
+| 1 | [#2 Sensitive System Path Leak in Logger](https://github.com/alvinetansri-collab/Proyek_RPL/issues/2) | Penggunaan / Audit | `apps/api/src/security.ts` | **SOLVED** |
+| 2 | [#3 Potential CRLF Log Injection (CWE-117)](https://github.com/alvinetansri-collab/Proyek_RPL/issues/3) | Penggunaan / Input | `apps/api/src/security.ts` | **SOLVED** |
+| 3 | [#4 Unmasked PSTN Landline Phone Numbers](https://github.com/alvinetansri-collab/Proyek_RPL/issues/4) | Penggunaan / Audit | `packages/shared/src/security/masking.ts` | **SOLVED** |
+| 4 | [#5 Registration Allows Duplicate Certificate](https://github.com/alvinetansri-collab/Proyek_RPL/issues/5) | Penggunaan / Logika | `packages/shared/src/domain/land.ts` & `apps/api` | **SOLVED** |
+| 5 | [#6 404 Not Found on Page Refresh Vercel](https://github.com/alvinetansri-collab/Proyek_RPL/issues/6) | Deployment Cloud | `apps/web/vercel.json` | **SOLVED** |
+| 6 | [#7 Potential File Corruption on Sudden Crash](https://github.com/alvinetansri-collab/Proyek_RPL/issues/7) | Penggunaan / Storage | `apps/api/src/store.ts` | **SOLVED** |
+| 7 | [#8 Blank Screen on Cloud Frontend When API Offline](https://github.com/alvinetansri-collab/Proyek_RPL/issues/8) | Deployment Cloud | `apps/web/src/App.tsx` | **SOLVED** |
+| 8 | [#9 Malformed JSON Request Triggers 500 HTML](https://github.com/alvinetansri-collab/Proyek_RPL/issues/9) | Penggunaan / API | `apps/api/src/index.ts` | **SOLVED** |
+| 9 | [#10 CommonJS vs ES Module Conflict during Build](https://github.com/alvinetansri-collab/Proyek_RPL/issues/10) | Deployment / Build | `apps/api/tsconfig.json` & `package.json` | **SOLVED** |
+| 10 | [#11 Document Issuance Date Accepts Invalid Date](https://github.com/alvinetansri-collab/Proyek_RPL/issues/11) | Penggunaan / Validasi | `packages/shared/src/domain/land.ts` | **SOLVED** |
+
+---
+
+### Rincian Implementasi Kode Perbaikan (Code Fixes)
+
+#### 1. Issue #2: Sensor Path Internal Sistem pada Error Log
+- **Deskripsi Bug**: Stack trace sistem mencatat path absolut direktori lokal komputer server (CWE-209 Information Disclosure).
+- **File Diperbaiki**: `apps/api/src/security.ts` & `packages/shared/src/security/masking.ts`
+- **Kode Perbaikan**:
+```typescript
+export function sanitizeLogText(text: string): string {
+  return text
+    .replace(/[a-zA-Z]:[/\\][a-zA-Z0-9_\-./\\]+/g, '[INTERNAL_PATH]')
+    .replace(/(?:\/[a-zA-Z0-9_.\-]+){2,}/g, '[INTERNAL_PATH]')
+    .replace(/file:\/\/\/[^\s]+/g, '[INTERNAL_PATH]')
+    .replace(/\\\\(?:\?|\.)\\[a-zA-Z0-9_\-.\\]+/g, '[INTERNAL_PATH]');
+}
+```
+- **Verifikasi**: Lolos pengujian `tests/security-audit/security-logging.test.ts` (Test #8).
+
+#### 2. Issue #3: Pencegahan CRLF Log Injection (CWE-117)
+- **Deskripsi Bug**: Karakter baris baru (`\r\n`) pada field input berpotensi memalsukan baris log audit server.
+- **File Diperbaiki**: `apps/api/src/security.ts`
+- **Kode Perbaikan**:
+```typescript
+export function sanitizeLogText(text: string): string {
+  return text.replace(/[\r\n]+/g, ' ').trim();
+}
+```
+- **Verifikasi**: Lolos pengujian `tests/security-audit/security-logging.test.ts` (Test #9).
+
+#### 3. Issue #4: Masking Nomor Telepon Kabel PSTN Seluruh Indonesia
+- **Deskripsi Bug**: Nomor telepon PSTN dengan kode area lokal (021, 0251, dsb) belum tersensor dalam audit log.
+- **File Diperbaiki**: `packages/shared/src/security/masking.ts`
+- **Kode Perbaikan**:
+```typescript
+export function maskPhoneNumber(phone: string): string {
+  return phone
+    .replace(/(\+?62|0)(2[1-9][0-9]?|[3-9][0-9]{1,2})[-.\s]?(\d{3,4})[-.\s]?(\d{3,4})/, '$1$2-****-$4')
+    .replace(/(\+?62|0)8[1-9][0-9]{1,2}[-.\s]?(\d{4})[-.\s]?(\d{3,4})/, '$1-8***-****-$4');
+}
+```
+- **Verifikasi**: Lolos pengujian `tests/security-audit/security-logging.test.ts` (Test #5, #6, #7).
+
+#### 4. Issue #5: Validasi Penolakan Nomor Sertifikat Duplikat
+- **Deskripsi Bug**: Form registrasi sempat mengizinkan pendaftaran nomor sertifikat tanah yang kembar.
+- **File Diperbaiki**: `packages/shared/src/domain/land.ts` & `apps/api/src/index.ts`
+- **Kode Perbaikan**:
+```typescript
+export function isCertificateDuplicate(existingParcels: LandPlot[], newNumber: string): boolean {
+  const normalized = newNumber.trim().toLowerCase();
+  return existingParcels.some(p => p.certificateNumber.trim().toLowerCase() === normalized);
+}
+
+// Controller POST /api/parcels
+if (isCertificateDuplicate(store.getParcels(), req.body.certificateNumber)) {
+  return res.status(409).json({ error: 'Nomor sertifikat tanah sudah terdaftar dalam sistem' });
+}
+```
+- **Verifikasi**: Lolos pengujian `tests/unit/us-1-registration.test.ts` dengan status HTTP 409 Conflict.
+
+#### 5. Issue #6: Routing SPA 404 pada Vercel Cloud Deployment
+- **Deskripsi Bug**: Refresh halaman pada rute selain `/` memicu error HTTP 404 dari web server Vercel.
+- **File Ditambahkan**: `apps/web/vercel.json`
+- **Kode Konfigurasi Solusi**:
+```json
+{
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
+```
+- **Verifikasi**: Halaman di `https://proyek-rpl.vercel.app/` dapat di-refresh tanpa error 404.
+
+#### 6. Issue #7: Pencegahan Korupsi Berkas Penyimpanan JSON (Atomic Write)
+- **Deskripsi Bug**: Penulisan berkas langsung berisiko menghasilkan file rusak (*corrupted JSON*) jika server crash mendadak.
+- **File Diperbaiki**: `apps/api/src/store.ts`
+- **Kode Perbaikan**:
+```typescript
+export function atomicWriteFileSync(filePath: string, data: any): void {
+  const tmpPath = `${filePath}.tmp.${Date.now()}`;
+  fs.writeFileSync(tmpPath, JSON.stringify(data, null, 2), 'utf-8');
+  fs.renameSync(tmpPath, filePath);
+}
+```
+- **Verifikasi**: Lolos pengujian `tests/security-audit/security-logging.test.ts` (Test #11).
+
+#### 7. Issue #8: Offline Resilient Standalone Fallback pada Cloud Frontend
+- **Deskripsi Bug**: Frontend cloud sempat mengalami layar kosong (*blank screen*) saat API backend tidak terjangkau.
+- **File Diperbaiki**: `apps/web/src/App.tsx`
+- **Kode Perbaikan**:
+```typescript
+try {
+  const res = await fetch(`${API_BASE_URL}/parcels`);
+  if (!res.ok) throw new Error('API offline');
+  setParcels(await res.json());
+  setIsStandalone(false);
+} catch {
+  setIsStandalone(true);
+  const cached = localStorage.getItem('rpl_parcels');
+  setParcels(cached ? JSON.parse(cached) : INITIAL_SEED_DATA);
+}
+```
+- **Verifikasi**: Muncul badge *"● Mode Standalone (Penyimpanan Lokal Aktif)"* dan semua fitur dapat diuji.
+
+#### 8. Issue #9: Centralized Error Handler untuk Malformed JSON Request
+- **Deskripsi Bug**: Request dengan format body JSON rusak memicu halaman error HTML 500 mentah dari Express.
+- **File Diperbaiki**: `apps/api/src/index.ts`
+- **Kode Perbaikan**:
+```typescript
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+  if (err instanceof SyntaxError && 'body' in err) {
+    return res.status(400).json({ error: 'Format JSON body tidak valid', statusCode: 400 });
+  }
+  return res.status(500).json({ error: 'Terjadi kesalahan internal pada server', statusCode: 500 });
+});
+```
+- **Verifikasi**: Error ditangkap terpusat dan mengembalikan JSON HTTP 400 Bad Request terstandar.
+
+#### 9. Issue #10: Penyelarasan Konfigurasi Modul CommonJS pada Build API
+- **Deskripsi Bug**: Konflik `"type": "module"` memicu error runtime `ReferenceError: exports is not defined`.
+- **File Diperbaiki**: `apps/api/tsconfig.json` & `apps/api/package.json`
+- **Kode Konfigurasi Solusi**:
+```json
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es2022",
+    "moduleResolution": "node",
+    "outDir": "./dist",
+    "rootDir": "./src"
+  }
+}
+```
+- **Verifikasi**: Pipeline `npm run build` berhasil mengompilasi seluruh workspace dengan exit code 0.
+
+#### 10. Issue #11: Validasi Format Tanggal Terbit Dokumen ISO 8601
+- **Deskripsi Bug**: Form dokumen menerima format tanggal tidak standar atau tanggal di masa depan yang tidak realistis.
+- **File Diperbaiki**: `packages/shared/src/domain/land.ts`
+- **Kode Perbaikan**:
+```typescript
+export function validateDocumentIssuanceDate(dateStr: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return false;
+  const parsed = new Date(dateStr);
+  return !isNaN(parsed.getTime()) && parsed <= new Date();
+}
+```
+- **Verifikasi**: Lolos pengujian `tests/unit/us-5-document-completeness.test.ts` (Test #5).

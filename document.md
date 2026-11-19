@@ -73,3 +73,8 @@ Catatan silsilah perpindahan hak atau transaksi dari pemilik lama ke pemilik bar
    
 ## 6. Paket Bersama (packages/shared)
 Berisi definisi antarmuka TypeScript terpusat (LandPlot, Owner, Document, OwnershipHistory, DocumentStatus, dsb.) yang diimpor langsung oleh apps/web dan apps/api guna menghindari duplikasi kode serta menjaga konsistensi tipe data secara ketat
+
+## 7. Link
+Link: https://proyek-rpl.vercel.app/
+
+Image: aplikasi vercel.png
