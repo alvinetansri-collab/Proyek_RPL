@@ -2,6 +2,15 @@ import fs from "fs";
 import path from "path";
 
 /**
+ * Modul Keamanan Logging & Persistensi File Atomik
+ * Terhubung langsung dengan resolusi GitHub Issues:
+ * - Fixes #2: Sensitive Internal System Path Leak in Logger Error Stack (CWE-209)
+ * - Fixes #3: Potential CRLF Log Injection (CWE-117) via User Inputs
+ * - Fixes #4: Unmasked PSTN Landline Phone Numbers in Audit Trail
+ * - Fixes #7: Potential JSON File Store Corruption on Abrupt System Crash (atomicWriteFileSync)
+ */
+
+/**
  * Sanitasi & Masking PII (Personally Identifiable Information)
  * Menyamarkan NIK (16 digit) dan nomor telepon (seluler, internasional, kode area PSTN seperti 021-87901234, dengan pemisah strip/spasi)
  */

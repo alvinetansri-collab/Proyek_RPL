@@ -1,3 +1,12 @@
+/**
+ * Automated Security & Privacy Audit Verification Test Suite
+ * Memverifikasi secara otomatis perbaikan kode untuk:
+ * - Fixes #2 (Path Sanitizer CWE-209 multi-OS)
+ * - Fixes #3 (CRLF Log Injection CWE-117)
+ * - Fixes #4 (PSTN Landline Masking PII)
+ * - Fixes #7 (Atomic Storage Persistence Pattern)
+ */
+
 import test from "node:test";
 import assert from "node:assert";
 import fs from "fs";

@@ -1,3 +1,10 @@
+/**
+ * REST API Server - Sistem Monitoring Dokumen dan Status Kepemilikan Tanah
+ * Terhubung langsung dengan resolusi GitHub Issues:
+ * - Fixes #5: Validasi Penolakan Sertifikat Duplikat (isCertificateDuplicate)
+ * - Fixes #9: Centralized Error Handling untuk Malformed JSON Request Body (HTTP 400)
+ */
+
 import express from "express";
 import cors from "cors";
 import fs from "fs";

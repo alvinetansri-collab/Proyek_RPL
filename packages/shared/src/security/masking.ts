@@ -1,5 +1,10 @@
 /**
  * Sanitasi & Masking PII (Personally Identifiable Information)
+ * Terhubung langsung dengan resolusi GitHub Issues:
+ * - Fixes #2: Comprehensive internal file path sanitizer regex (Windows, POSIX, URI, UNC)
+ * - Fixes #3: CRLF injection prevention in audit logging (CWE-117)
+ * - Fixes #4: PII Masking for Indonesian PSTN landline area codes (021, 022, 0251, dsb)
+ * 
  * Menyamarkan NIK (16 digit) dan nomor telepon (seluler, internasional, kode area PSTN seperti 021-87901234, dengan pemisah strip/spasi)
  */
 export function maskPII(text: string): string {
