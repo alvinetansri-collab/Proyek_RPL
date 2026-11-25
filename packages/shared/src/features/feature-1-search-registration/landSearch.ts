@@ -83,7 +83,7 @@ export function validateLandRegistration(
 
   if (!input.CertificateNumber || input.CertificateNumber.trim() === "") {
     errors.push("Nomor sertifikat tidak boleh kosong.");
-  } else if (existingCertificates.includes(input.CertificateNumber.trim())) {
+  } else if (existingCertificates.some((c) => c.trim().toLowerCase() === input.CertificateNumber!.trim().toLowerCase())) {
     errors.push(`Nomor sertifikat '${input.CertificateNumber}' sudah terdaftar dalam sistem.`);
   }
 

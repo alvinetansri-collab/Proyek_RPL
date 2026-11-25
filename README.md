@@ -1,6 +1,6 @@
 # Sistem Monitoring Dokumen dan Status Kepemilikan Tanah
 
-[![Unit Tests](https://img.shields.io/badge/Unit%20Tests-74%2F74%20PASSED-brightgreen.svg)](https://github.com/alvinetansri-collab/Proyek_RPL)
+[![Unit Tests](https://img.shields.io/badge/Unit%20Tests-200%2F200%20PASSED-brightgreen.svg)](https://github.com/alvinetansri-collab/Proyek_RPL)
 [![Pull Request](https://img.shields.io/badge/Pull%20Request-%231%20OPEN-brightgreen.svg)](https://github.com/alvinetansri-collab/Proyek_RPL/pull/1)
 [![GitHub Issues](https://img.shields.io/badge/GitHub%20Issues-10%2F10%20SOLVED-brightgreen.svg)](https://github.com/alvinetansri-collab/Proyek_RPL/issues?q=is%3Aissue+is%3Aclosed)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel%20Production-success.svg)](https://proyek-rpl.vercel.app/)
@@ -232,16 +232,16 @@ npm run test:feat1   # Fitur 1 asli
 npm run test:feat2   # Fitur 2 asli
 ```
 
-**Hasil Pengujian Terverifikasi:**
+**Hasil Pengujian Terverifikasi (P11 Full Regression Suite):**
 ```text
-ℹ tests 74
+ℹ tests 200
 ℹ suites 0
-ℹ pass 74
+ℹ pass 200
 ℹ fail 0
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms ~490ms
+ℹ duration_ms ~360ms
 ```
 
 ---

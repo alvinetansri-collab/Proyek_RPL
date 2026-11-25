@@ -23,6 +23,7 @@
     "test:us2": "node --test tests/us2-land-search-filter/us2-land-search-filter.test.ts",
     "test:us3": "node --test tests/us3-document-completeness/us3-document-completeness.test.ts",
     "test:us4": "node --test tests/us4-ownership-timeline/us4-ownership-timeline.test.ts",
-    "test:us5": "node --test tests/us5-document-management-metrics/us5-document-management-metrics.test.ts"
+    "test:us5": "node --test tests/us5-document-management-metrics/us5-document-management-metrics.test.ts",
+    "test:p11": "node --test tests/p11-regression/p11-regression-suite.test.ts"
   }
 }

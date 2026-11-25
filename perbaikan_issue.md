@@ -1,7 +1,7 @@
 # Implementasi Kode Perbaikan 10 Issues Pasca-Deployment (Before vs After)
 
 [![GitHub Issues](https://img.shields.io/badge/GitHub%20Issues-10%2F10%20SOLVED-brightgreen.svg)](https://github.com/alvinetansri-collab/Proyek_RPL/issues?q=is%3Aissue+is%3Aclosed)
-[![Unit Tests](https://img.shields.io/badge/Unit%20Tests-74%2F74%20PASSED-brightgreen.svg)](https://github.com/alvinetansri-collab/Proyek_RPL)
+[![Unit Tests](https://img.shields.io/badge/Unit%20Tests-200%2F200%20PASSED-brightgreen.svg)](https://github.com/alvinetansri-collab/Proyek_RPL)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel%20Production-success.svg)](https://proyek-rpl.vercel.app/)
 
 Dokumen ini mendokumentasikan implementasi konkret perbaikan kode (*code fixes*) pada repositori **Sistem Monitoring Dokumen & Status Kepemilikan Tanah** untuk seluruh 10 issue yang ditemukan pasca-deployment. Setiap issue memuat perbandingan langsung antara kode **Sebelum Perbaikan (Bug/Vulnerable)** dengan kode **Setelah Perbaikan (Fixed/Implemented)**.
